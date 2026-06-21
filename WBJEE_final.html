@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WBJEE College Predictor — Rank to Branch, from real ORCR data</title>
+<meta name="description" content="Enter your WBJEE rank and category to see the 15 closest-matching engineering branches and colleges, built from official Opening Rank–Closing Rank counselling data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16264A;
+    --ink-2:#223464;
+    --ink-soft:#4A5670;
+    --paper:#F7F4EC;
+    --paper-2:#FFFFFF;
+    --gold:#BD9A3D;
+    --gold-deep:#8C6D1F;
+    --line:#DCD3BC;
+    --safe:#2F7D4F;
+    --safe-bg:#E7F2EC;
+    --moderate:#A86A10;
+    --moderate-bg:#F7EDDD;
+    --dream:#8B2E3C;
+    --dream-bg:#F6E6E8;
+    --display: 'Spectral', serif;
+    --body: 'IBM Plex Sans', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--gold-deep);}
+  :focus-visible{outline:2px solid var(--gold-deep); outline-offset:2px;}
+
+  /* ---------- Header ---------- */
+  .site-header{
+    background:var(--ink);
+    border-bottom:3px solid var(--gold);
+  }
+  .header-inner{
+    max-width:1080px;
+    margin:0 auto;
+    padding:0.9rem 1.5rem;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:1rem;
+    flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:0.75rem;}
+  .seal{flex-shrink:0;}
+  .wordmark{display:flex; flex-direction:column; line-height:1.1;}
+  .wm-top{
+    font-family:var(--mono);
+    font-size:0.68rem;
+    letter-spacing:0.18em;
+    color:var(--gold);
+    font-weight:600;
+  }
+  .wm-bottom{
+    font-family:var(--display);
+    font-size:1.3rem;
+    font-weight:600;
+    color:#FFF;
+  }
+  .header-meta{
+    font-family:var(--mono);
+    font-size:0.72rem;
+    letter-spacing:0.08em;
+    color:#CBD3E6;
+    text-transform:uppercase;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{padding:3.5rem 1.5rem 2.5rem;}
+  .hero-inner{max-width:1080px; margin:0 auto;}
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:0.75rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold-deep);
+    margin:0 0 0.9rem;
+  }
+  h1{
+    font-family:var(--display);
+    font-weight:700;
+    font-size:clamp(1.9rem, 4vw, 2.9rem);
+    line-height:1.18;
+    margin:0 0 1.1rem;
+    max-width:18ch;
+  }
+  h1 em{font-style:italic; font-weight:500; color:var(--ink-2);}
+  .hero-sub{
+    font-size:1.02rem;
+    color:var(--ink-soft);
+    max-width:62ch;
+    margin:0 0 2.3rem;
+  }
+  .hero-sub strong{color:var(--ink); font-weight:600;}
+
+  /* ---------- Ticket panel ---------- */
+  .ticket-panel{
+    position:relative;
+    background:var(--paper-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:1.9rem 2.2rem 1.6rem;
+    box-shadow:0 1px 0 var(--line), 0 18px 40px -28px rgba(22,38,74,0.35);
+  }
+  .ticket-panel::before, .ticket-panel::after{
+    content:'';
+    position:absolute;
+    width:22px; height:22px;
+    background:var(--paper);
+    border-radius:50%;
+    top:50%;
+    transform:translateY(-50%);
+    border:1px solid var(--line);
+  }
+  .ticket-panel::before{left:-12px;}
+  .ticket-panel::after{right:-12px;}
+  .corner{
+    position:absolute;
+    font-family:var(--mono);
+    font-size:13px;
+    color:var(--gold);
+    opacity:0.6;
+    line-height:1;
+  }
+  .corner.tl{top:8px; left:12px;}
+  .corner.tr{top:8px; right:12px;}
+  .corner.bl{bottom:6px; left:12px;}
+  .corner.br{bottom:6px; right:12px;}
+
+  .field-grid{
+    display:grid;
+    grid-template-columns:1.1fr 1.2fr 1fr 1fr 1.2fr;
+    gap:1.1rem;
+  }
+  .field{display:flex; flex-direction:column; gap:0.4rem;}
+  .field-label{
+    font-family:var(--mono);
+    font-size:0.68rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+  }
+  input[type="number"], select{
+    font-family:var(--mono);
+    font-size:1rem;
+    padding:0.6rem 0.65rem;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  select{font-family:var(--body); font-size:0.92rem;}
+  input[type="number"]::placeholder{color:#9aa3b8; font-family:var(--mono);}
+
+  .predict-row{
+    border-top:1px dashed var(--line);
+    margin-top:1.4rem;
+    padding-top:1.3rem;
+    display:flex;
+    align-items:center;
+    gap:1.1rem;
+    flex-wrap:wrap;
+  }
+  #predictBtn{
+    background:var(--gold);
+    color:var(--ink);
+    border:none;
+    font-family:var(--body);
+    font-weight:600;
+    font-size:0.95rem;
+    letter-spacing:0.03em;
+    padding:0.75rem 1.6rem;
+    border-radius:4px;
+    cursor:pointer;
+    transition:background-color 0.15s ease, transform 0.1s ease;
+  }
+  #predictBtn:hover{background:#cdab52;}
+  #predictBtn:active{transform:translateY(1px);}
+  .predict-hint{
+    font-size:0.8rem;
+    color:var(--ink-soft);
+  }
+  @media (prefers-reduced-motion: reduce){
+    #predictBtn{transition:none;}
+  }
+
+  /* ---------- Results ---------- */
+  .results{padding:1.5rem 1.5rem 4rem;}
+  .results-inner{max-width:1080px; margin:0 auto;}
+  .results-placeholder{
+    font-family:var(--display);
+    font-style:italic;
+    font-size:1.15rem;
+    color:var(--ink-soft);
+    border-top:1px dashed var(--line);
+    padding-top:2rem;
+  }
+  .results-summary{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:0.8rem;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:0.8rem;
+    margin-bottom:0.4rem;
+  }
+  .results-title{
+    font-family:var(--display);
+    font-size:1.4rem;
+    font-weight:600;
+    margin:0;
+  }
+  .results-meta{
+    font-family:var(--mono);
+    font-size:0.78rem;
+    color:var(--ink-soft);
+  }
+  .legend{
+    display:flex; gap:1rem; flex-wrap:wrap;
+    margin:1rem 0 0.6rem;
+    font-size:0.82rem;
+    color:var(--ink-soft);
+  }
+  .legend span.dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:0.35rem;}
+  .dot-safe{background:var(--safe);}
+  .dot-moderate{background:var(--moderate);}
+  .dot-dream{background:var(--dream);}
+
+  .result-row{
+    display:grid;
+    grid-template-columns:44px 1fr 150px 90px;
+    gap:1.1rem;
+    align-items:center;
+    padding:1.05rem 0;
+    border-bottom:1px solid var(--line);
+  }
+  .result-row:last-child{border-bottom:none;}
+  .result-num{
+    font-family:var(--mono);
+    font-size:0.95rem;
+    color:var(--gold-deep);
+    font-weight:600;
+  }
+  .result-inst{
+    font-family:var(--display);
+    font-size:1.08rem;
+    font-weight:600;
+    margin:0 0 0.15rem;
+    color:var(--ink);
+  }
+  .result-prog{
+    margin:0 0 0.45rem;
+    font-size:0.92rem;
+    color:var(--ink-soft);
+  }
+  .result-tags{display:flex; gap:0.4rem; flex-wrap:wrap;}
+  .tag{
+    font-family:var(--mono);
+    font-size:0.66rem;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:0.15rem 0.45rem;
+  }
+  .result-ranks{display:flex; gap:1.1rem;}
+  .rank-block{display:flex; flex-direction:column; align-items:flex-start;}
+  .rank-label{font-family:var(--mono); font-size:0.62rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--ink-soft);}
+  .rank-num{font-family:var(--mono); font-size:1.02rem; font-weight:600; color:var(--ink);}
+  .chance-pill{
+    font-family:var(--mono);
+    font-size:0.68rem;
+    letter-spacing:0.05em;
+    font-weight:600;
+    padding:0.28rem 0.5rem;
+    border-radius:3px;
+    text-align:center;
+    display:inline-block;
+  }
+  .chance-safe{background:var(--safe-bg); color:var(--safe);}
+  .chance-moderate{background:var(--moderate-bg); color:var(--moderate);}
+  .chance-dream{background:var(--dream-bg); color:var(--dream);}
+
+  .empty-state, .error-state{
+    border-top:1px dashed var(--line);
+    padding-top:1.8rem;
+  }
+  .empty-state h3, .error-state h3{
+    font-family:var(--display);
+    margin:0 0 0.5rem;
+  }
+  .empty-state p, .error-state p{color:var(--ink-soft); max-width:60ch;}
+
+  /* ---------- Footer ---------- */
+  .site-footer{
+    border-top:1px solid var(--line);
+    padding:1.6rem 1.5rem 2.5rem;
+  }
+  .site-footer p{
+    max-width:1080px;
+    margin:0 auto;
+    font-size:0.78rem;
+    color:var(--ink-soft);
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:880px){
+    .field-grid{grid-template-columns:1fr 1fr;}
+  }
+  @media (max-width:640px){
+    .field-grid{grid-template-columns:1fr;}
+    .result-row{grid-template-columns:32px 1fr; row-gap:0.5rem;}
+    .result-ranks{grid-column:2; }
+    .result-chance{grid-column:2;}
+    .ticket-panel{padding:1.6rem 1.3rem;}
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <svg class="seal" width="38" height="38" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+        <circle cx="19" cy="19" r="17" stroke="#BD9A3D" stroke-width="1.4"/>
+        <circle cx="19" cy="19" r="12.5" stroke="#BD9A3D" stroke-width="1"/>
+        <rect x="15" y="15" width="8" height="8" transform="rotate(45 19 19)" stroke="#BD9A3D" stroke-width="1.2"/>
+        <g stroke="#BD9A3D" stroke-width="1">
+          <line x1="19" y1="1.5" x2="19" y2="4.5"/>
+          <line x1="19" y1="33.5" x2="19" y2="36.5"/>
+          <line x1="1.5" y1="19" x2="4.5" y2="19"/>
+          <line x1="33.5" y1="19" x2="36.5" y2="19"/>
+          <line x1="6.5" y1="6.5" x2="8.7" y2="8.7"/>
+          <line x1="29.3" y1="29.3" x2="31.5" y2="31.5"/>
+          <line x1="6.5" y1="31.5" x2="8.7" y2="29.3"/>
+          <line x1="29.3" y1="8.7" x2="31.5" y2="6.5"/>
+        </g>
+      </svg>
+      <div class="wordmark">
+        <span class="wm-top">WBJEE</span>
+        <span class="wm-bottom">College Predictor</span>
+      </div>
+    </div>
+    <div class="header-meta">ORCR Data · Round 1 &amp; Round 2 · Decentralized Round</div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-inner">
+      <p class="eyebrow">Built from official counselling records, not guesswork</p>
+      <h1>Your rank decides everything.<br><em>See exactly where it can take you.</em></h1>
+      <p class="hero-sub">Enter your WBJEE rank and category to get your <strong>15 closest-matching</strong> branches and colleges, ranked by real chances of admission — drawn from <strong>3,020</strong> Opening Rank–Closing Rank entries across <strong>119 institutes</strong> and <strong>123 programs</strong>. Also includes <strong>Jadavpur University Decentralized Round</strong> cutoffs.</p>
+
+      <div class="ticket-panel">
+        <span class="corner tl">+</span><span class="corner tr">+</span><span class="corner bl">+</span><span class="corner br">+</span>
+        <div class="field-grid">
+          <label class="field">
+            <span class="field-label">Your WBJEE Rank</span>
+            <input type="number" id="rankInput" placeholder="e.g. 14523" min="1" inputmode="numeric">
+          </label>
+          <label class="field">
+            <span class="field-label">Category</span>
+            <select id="categorySelect"></select>
+          </label>
+          <label class="field">
+            <span class="field-label">Quota</span>
+            <select id="quotaSelect"></select>
+          </label>
+          <label class="field">
+            <span class="field-label">Seat Type</span>
+            <select id="seatSelect"></select>
+          </label>
+          <label class="field">
+            <span class="field-label">Counselling Round</span>
+            <select id="roundSelect"></select>
+          </label>
+        </div>
+        <div class="predict-row">
+          <button id="predictBtn" type="button">Predict My Colleges</button>
+          <span class="predict-hint">Tip: press Enter in the rank field to predict instantly</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="results" id="resultsSection" aria-live="polite">
+    <div class="results-inner" id="resultsInner">
+      <p class="results-placeholder">Fill in your rank above and your matches will line up here — like a merit list with your name already on it.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>Source: official WBJEE Opening Rank–Closing Rank (ORCR) counselling data for Round 1 and Round 2, plus Jadavpur University Decentralized Round final cut-off ranks (Open category, Home State quota). Cutoffs shift every year with seat availability and applicant numbers — treat these results as a guide for shortlisting, not a guarantee of admission. This is an independent tool and is not affiliated with the WBJEE Board.</p>
+</footer>
+
+<script>
+const DATA = {"INST":["ALIPURDUAR GOVERNMENT ENGINEERING AND MANAGEMENT COLLEGE","ANAND COLLEGE OF EDUCATION, DEBRA, PASCHIM MEDINIPUR","Abacus Institute of Engineering & Management, Mogra, Hooghly","Academy of Technology, Adisaptagram, Hooghly","Adamas University, Barasat","Aliah University, New Town","Asansol Engineering College, Asansol, Burdwan","B.P. Poddar Institute of Management & Technology, Kolkata","BCDA COLLEGE OF PHARMACY & TECHNOLOGY, CAMPUS-2","BCDA COLLEGE OF PHARMACY & TECHNOLOGY, HRIDAYPUR, MADHYAMGRAM","BENGAL COLLEGE OF PHARMACEUTICAL SCIENCE & RESEARCH, DURGAPUR","BENGAL COLLEGE OF PHARMACEUTICAL TECHNOLOGY, DUBRAJPUR, BIRBHUM","BENGAL SCHOOL OF TECHNOLOGY, SUGANDHA, HOOGHLY","BHARAT TECHNOLOGY, ULUBERIA, HOWRAH","BIRBHUM PHARMACY SCHOOL, HETAMPUR, BIRBHUM","BRAINWARE UNIVERSITY","Bankura Unnayani Institute of Engineering, Bankura","Bengal College of Engineering & Technology, Durgapur","Bengal Institute of Technology & Management, Santiniketan","Bidhan Chandra Krishi Viswa Vidyalaya, Mohanpur, Nadia","Birbhum Institute of Engineering & Technology, Suri, Birbhum","Budge Budge Institute of Technology, Budge-Budge","CALCUTTA INSTITUTE OF PHARMACEUTICAL TECH. & ALLIED HEALTH SCIENCES, ULUBERIA","Calcutta Institute of Technology, Uluberia, Howrah","Camellia Institute of Engineering and Technology, Bud Bud, Burdwan","Camellia Institute of Technology & Management, Bainchi, Hooghly","Camellia Institute of Technology, Badu Road, Madhyamgram","Camellia School of Engineering & Technology, Barasat","College of Engineering and Management, Kolaghat","Cooch Behar Government Engineering College, Cooch Behar","DARJEELING HILL INSTITUTE OF TECHNOLOGY AND MANAGEMENT","DEROZIO PHARMA INSTITUTE","Dr. B. C. Roy Engineering College, Durgapur","Dr.Sudhir Chandra Sur Institute of Technology and Sports Complex, Dum Dum","Dream Institute of Technology, Bishnupur, 24-Parganas-South","Dumkal Institute of Engineering & Technology, Dumkal, Murshidabad","Durgapur Institute of Advanced Technology & Management, Durgapur","EAST WEST EDUCATION INSTITUTE","EMINENT COLLEGE OF PHARMACEUTICAL TECHNOLOGY, BARASAT","Elitte College of Engineering,Mahispota, Sodepur","FACULTY OF TECHNOLOGY, UTTAR BANGA KRISHI VISWAVIDYALAYA","FLEMMING COLLEGE OF PHARMACY","Future Institute of Engineering & Management, Sonarpur","Future Institute of Technology, Boral, Garia","GANDHARI COLLEGE (SCHOOL OF PHARMACY)","GITANJALI COLLEGE OF PHARMACY, LOHAPUR, BIRBHUM","GUPTA COLLEGE OF TECHNOLOGICAL SCIENCES, ASANSOL, BURDWAN","GURU NANAK INSTITUTE OF PHARMACEUTICAL SCIENCE AND TECHNOLOGY, SODEPUR","Gargi Memorial Institute of Technology, Baruipur, Kolkata","Ghani Khan Choudhury Institute of Engineering & Technology, Malda","Global Institute of Management and Technology, Krishnanagar, Nadia","Goverment College of Engineering and Leather Technology, Kolkata","Govt. College of Engg. & Textile Technology, Berhampore","Govt. College of Engineering & Ceramic Technology, Kolkata","Govt. College of Engineering & Textile Technology, Serampore","Greater Kolkata College of Engineering & Management, Baruipur","Guru Nanak Institute of Technology, Panihati, Sodepur","Haldia Institute of Pharmacy, Haldia","Haldia Institute of Technology, Haldia, Purba Medinipur","Hemnalini Memorial College of Engineering, Haringhata","Heritage Institute of Technology, Kolkata","Hooghly Engineering & Technology College, Hooghly","IQ CITY INSTITUTE OF PHARMACEUTICAL SCIENCES","Ideal Institute of Engineering, Kalyani","Imps College of Engineering & Technology, Malda","Institute of Pharmacy, Jalpaiguri","Institute of Science and Technology, Paschim Medinipur","JAKIR HOSSAIN INSTITUTE OF PHARMACY","Jadavpur University","Jalpaiguri Goverment Engineering College,Jalpaiguri","Jis College of Engineering, Kalyani, Nadia","Jis University, Agarpara","Jld Engineering and Management College, Baruipur","Kaji Nazrul University, Asansol","Kalyani Goverment Engineering College, Kalyani, Nadia","Mallabhum Institute of Technology, Bishnupur, Bankura","Maulana Abul Kalam Azad University of Technology, West Bengal","Mckv Institute of Engineering, Liluah, Howrah","Meghnad Saha Institute of Technology, Kolkata","Murshidabad College of Engineering & Technology, Murshidabad","NETAJI SUBHASH CHANDRA BOSE INSTITUTE OF PHARMACY ,CHAKDAH, NADIA","NSHM INSTITUTE OF PHARMACEUTICAL TECHNOLOGY, DURGAPUR","NSHM KNOWLEDGE CAMPUS, KOLKATA GROUP OF INSTITUTIONS, KOLKATA","NURUL INSTITUTE OF MEDICAL SCIENCES & RESEARCH LAB CENTRE","Narula Institute of Technology, Agarpara, Kolkata","Netaji Subhas Engineering College, Garia, Kolkata","Nshm Knowledge Campus, Durgapur Group of Institutions","Om Dayal Group of Institutions, Uluberia, Howrah","P.G. INSTITUTE OF MEDICAL SCIENCES, CHANDRAKONA","PANDAVESWAR SCHOOL OF PHARMACY","RASHBEHARI PHARMACEUTICAL INSTITUTE","Ramkrishna Mahato Government Engineering College, Purulia","Rcc Institute of Information Technology, Kolkata","Regent Education and Research Foundation, Barasat, Kolkata","SCHOOL OF PHARMACY, TECHNO INDIA UNIVERSITY, SALT LAKE","SEACOM PHARMACY COLLEGE","SKM INSTITUTE OF PHARMACEUTICAL SCIENCES AND RESEARCH","Sanaka Education Trusts Group of Institutions, Durgapur, Burdwan","Seacom Engineering College, Sankrail, Howrah","Seacom Skills University, Bolpur","Siliguri Institute of Technology, Siliguri","Sister Nivedita University, New Town","St. Thomas College of Engineering & Technology, Khidirpur, Kolkata","Supreme Knowledge Foundation Group of Institutions, Mankundu, Hooghly","Swami Vivekananda Institute of Science & Technology, Sonarpur","Swami Vivekananda University","TARIFA MEMORIAL INSTITUTE OF PHARMACY","TECHNO BENGAL INSTITUTE OF TECHNOLOGY","TECHNO INSTITUTE OF ENGINEERING AND MANAGEMENT","THE NEOTIA UNIVERSITY","Techno India University, Salt Lake","Techno International Batanagar","Techno International New Town, Rajarhat, New Town","Techno Main Salt Lake, Sector-V, Salt Lake","UNIVERSITY INSTITUTE OF TECHNOLOGY, BURDWAN UNIVERSITY","UNIVERSITY OF KALYANI, KALYANI","University Of Calcutta","VIDYASAGAR PHARMACEUTICAL COLLEGE OF EDUCATION","West Bengal University of Animal & Fishery Sciences"],"PROG":["5G","5G (TFW)","ARTIFICIAL INTELLIGENCE (AI)","ARTIFICIAL INTELLIGENCE (AI) -TFW","ARTIFICIAL INTELLIGENCE (AI) AND DATA SCIENCE","ARTIFICIAL INTELLIGENCE (AI) AND DATA SCIENCE - TFW","AUGMENTED REALITY (TFW)","Agricultural Engineering","Agricultural Engineering (TFW)","Apparel & Production Management","Apparel & Production Management (TFW)","Applied Electronics And Instrumentation Engineering","Applied Electronics And Instrumentation Engineering   (TFW)","Architectural Engineering","Architecture","Artificial Intelligence And Data Science","Artificial Intelligence And Data Science (TFW)","Artificial Intelligence And Machine Learning","Artificial Intelligence And Machine Learning (TFW)","Automobile Engineering","B ARCH","B.Pharm/Pharmaceutical Technology","B.Pharm/Pharmaceutical Technology (TFW)","Biomedical Engineering","Biomedical Engineering (TFW)","Biotechnology","Biotechnology (TFW)","CERAMIC ENGINEERING AND TECHNOLOGY","CERAMIC ENGINEERING AND TECHNOLOGY - TFW","CHEMICAL TECHNOLOGY (Ceramic Engineering, Oil Technology, Petrochem & petro refinery Engg, Pharmaceutical & Fine Chemical Technology)","CHEMICAL TECHNOLOGY (Ceramic Engineering, Oil Technology, Petrochem & petro refinery Engg, Pharmaceutical & Fine Chemical Technology) - TFW","CLOUD COMPUTING","COMPUTER SCIENCE & ENGINEERING (INTERNET OF THINGS)","COMPUTER SCIENCE & ENGINEERING (INTERNET OF THINGS) (TFW)","COMPUTER SCIENCE & ENGINEERING (ROBOTICS AND ARTIFICIAL INTELLIGENCE)","COMPUTER SCIENCE AND APPLIED MATHEMATICS","COMPUTER SCIENCE AND INFORMATION TECHNOLOGY","COMPUTER SCIENCE AND INFORMATION TECHNOLOGY-TFW","Chemical Engineering","Chemical Engineering (TFW)","Civil And Environmental Engineering","Civil Engineering","Civil Engineering (TFW)","Computer Science & Engineering","Computer Science & Engineering (Artificial Intelligence And Machine Learning)","Computer Science & Engineering (Artificial Intelligence And Machine Learning)  (TFW)","Computer Science & Engineering (Artificial Intelligence)","Computer Science & Engineering (Artificial Intelligence)  (TFW)","Computer Science & Engineering (Cyber Security)","Computer Science & Engineering (Cyber Security) (TFW)","Computer Science & Engineering (Data Science)","Computer Science & Engineering (Data Science)  (TFW)","Computer Science & Engineering (Internet Of Things And Cyber Security Including Block Chain Technology)","Computer Science & Engineering (Internet Of Things And Cyber Security Including Block Chain Technology) (TFW)","Computer Science & Engineering - TFW","Computer Science & Technology","Computer Science & Technology - TFW","Computer Science And Business System","Computer Science And Business System  (TFW)","Computer Science And Design","Computer Science And Design - TFW","Construction Engineering","Construction Engineering (TFW)","Dairy Technology","Data Science","ELECTRICAL & COMPUTER ENGINEERING","ELECTRICAL & COMPUTER ENGINEERING (TFW)","ELECTRONICS & COMPUTER SCIENCE","ELECTRONICS & COMPUTER SCIENCE - TFW","ELECTRONICS ENGINEERING (VLSI DESIGN AND TECHNOLOGY)","ELECTRONICS ENGINEERING (VLSI DESIGN AND TECHNOLOGY)-TFW","Electrical & Electronics Engineering","Electrical & Electronics Engineering (TFW)","Electrical Engineering","Electrical Engineering (TFW)","Electronics & Communication Engineering","Electronics & Communication Engineering (TFW)","Electronics & Tele-Communication Engineering","Electronics & Tele-Communication Engineering  (TFW)","Electronics And Instrumentation Engineering","Electronics And Instrumentation Engineering (TFW)","Food Technology","Food Technology (TFW)","Food Technology And Bio Chemical Engineering","Food Technology And Bio Chemical Engineering (TFW)","Information Technology","Information Technology (TFW)","Instrumentation & Electronics","Instrumentation & Electronics (TFW)","Instrumentation Engineering","Instrumentation Engineering (TFW)","Jute & Fibre Technology","Jute & Fibre Technology (TFW)","Leather Technology","Leather Technology (TFW)","Mechanical Engineering","Mechanical Engineering (TFW)","Mechatronics Engineering","Mechatronics Engineering (TFW)","Metallurgical And Materials Engineering","Metallurgical And Materials Engineeringwith Tfw","Metallurgical Engineering","Metallurgical Engineering (TFW)","Mining Engineering","Mining Engineeringwith Tfw","Optics & Optoelectronics","Optics & Optoelectronics (TFW)","PRINTING ENGINEERING","PRINTING ENGINEERING-TFW","Polymer Science & Technology","Polymer Science & Technology (TFW)","Power Engineering","Power Engineering (TFW)","Production Engineering","Production Engineering (TFW)","ROBOTICS & ARTIFICIAL INTELLIGENCE","ROBOTICS & ARTIFICIAL INTELLIGENCE (TFW)","Robotics And Automation Engineering","Semiconductor Technology","Semiconductor Technology (TFW)","Textile Technology","Textile Technology (TFW)","VIRTUAL REALITY (AR/VR) (TFW)"],"CAT":["EWS","OBC - A","OBC - A (PwD)","OBC - B","OBC - B (PwD)","Open","Open (PwD)","SC","SC (PwD)","ST","Tuition Fee Waiver"],"QUOTA":["All India","Home State"],"SEAT":["JEE(Main) Seats","WBJEE Seats"],"ROUND":["Round 1","Round 2","Decentralized Round"],"ROWS":[[58,54,10,1,1,0,5021,8720],[74,54,10,1,1,0,1233,1432],[77,54,10,1,1,0,11397,17467],[102,54,10,1,1,0,8360,17234],[76,54,10,1,1,0,3951,4509],[116,54,10,1,1,0,1619,1674],[78,54,10,1,1,0,8007,17387],[92,54,10,1,1,0,9142,15684],[105,54,10,1,1,0,26984,34607],[7,54,10,1,1,0,8328,16907],[28,54,10,1,1,0,5086,25310],[101,54,10,1,1,0,5627,28152],[58,50,0,1,1,0,57068,72995],[73,50,0,1,1,0,16613,23200],[73,50,1,1,1,0,12391,19598],[73,50,6,1,1,0,95033,95033],[73,50,7,1,1,0,14615,26893],[68,87,9,1,1,0,15158,19748],[73,50,3,1,1,0,10923,14860],[73,50,5,0,1,0,4809,10264],[73,50,9,1,1,0,93426,97072],[109,50,5,0,1,0,33086,52429],[33,50,5,0,0,0,5539,910571],[33,50,5,0,1,0,47189,97966],[68,38,6,1,1,0,23623,48447],[68,38,3,1,1,0,1938,2634],[68,38,0,1,1,0,2381,2647],[98,50,5,0,0,0,675610,675610],[112,50,5,0,1,0,31152,86367],[85,50,5,0,1,0,19408,51392],[86,50,5,0,1,0,23129,95150],[74,85,5,1,1,0,1958,2610],[74,85,7,1,1,0,8075,10103],[74,85,1,1,1,0,5026,5920],[74,85,4,1,1,0,28924,28924],[74,85,6,1,1,0,3419,9267],[74,85,2,1,1,0,50009,50009],[74,85,9,1,1,0,27743,30381],[74,85,3,1,1,0,2718,3272],[74,85,0,1,1,0,5117,5308],[77,85,5,0,1,0,5470,91546],[77,85,0,1,1,0,98568,98568],[68,38,5,1,1,0,1014,1406],[68,38,9,1,1,0,18163,31928],[68,38,5,0,1,0,716,1012],[77,85,5,0,0,0,328643,594447],[102,85,5,0,0,0,273560,574674],[102,85,5,0,1,0,27859,81045],[16,85,5,0,1,0,29388,59916],[15,44,5,0,1,0,14052,89608],[15,44,3,1,1,0,79967,79967],[6,44,5,0,1,0,12997,66207],[6,44,5,0,0,0,172503,551675],[32,44,5,0,0,0,247721,548315],[32,44,5,0,1,0,9021,78384],[49,44,0,1,1,0,15208,17845],[49,44,7,1,1,0,14709,19078],[49,44,3,1,1,0,9826,10439],[49,44,5,0,0,0,16755,76758],[49,44,5,0,1,0,3796,8343],[49,44,1,1,1,0,13672,17050],[49,44,9,1,1,0,63599,67657],[16,44,5,0,0,0,699698,797719],[60,38,5,0,1,0,7895,29205],[60,38,0,1,1,0,29466,81211],[60,38,7,1,1,0,30840,30840],[68,38,2,1,1,0,95300,95300],[60,25,5,0,0,0,85697,148604],[60,25,5,0,1,0,3988,24931],[60,25,7,1,1,0,24943,24943],[91,95,1,1,1,0,21063,24010],[91,95,9,1,1,0,66484,95257],[91,95,3,1,1,0,17101,17678],[91,95,5,1,1,0,10481,16922],[68,107,6,1,1,0,92724,92724],[116,73,7,1,1,0,8932,9281],[91,95,0,1,1,0,18113,24174],[91,95,6,1,1,0,84934,84934],[20,95,5,0,0,0,335996,335996],[74,95,3,1,1,0,4498,5049],[74,95,0,1,1,0,5616,7880],[77,95,5,0,0,0,742192,1138358],[77,95,5,0,1,0,18830,95398],[30,95,5,0,1,0,24156,68935],[59,95,5,0,1,0,45485,69119],[63,95,5,0,1,0,29412,76225],[63,95,5,0,0,0,225385,225385],[85,95,5,0,1,0,27528,95527],[58,86,10,1,1,0,3644,11360],[77,86,10,1,1,0,20747,25454],[85,86,10,1,1,0,9711,11644],[112,86,10,1,1,0,20283,25331],[74,86,10,1,1,0,2345,2583],[113,86,10,1,1,0,5978,7596],[70,86,10,1,1,0,22172,24770],[114,86,10,1,1,0,8428,11004],[54,86,10,1,1,0,6755,7153],[16,86,10,1,1,0,20088,20088],[73,103,0,1,1,0,53520,67489],[73,103,3,1,1,0,24321,26235],[86,50,5,0,0,0,1188387,1188387],[113,50,5,0,1,0,7449,13778],[85,50,5,0,0,0,211858,313241],[116,29,7,1,1,0,12469,15540],[116,29,6,1,1,0,98500,98500],[116,29,5,0,1,0,2076,2655],[116,29,3,1,1,0,5000,6024],[116,29,0,1,1,0,6425,8628],[116,29,1,1,1,0,8340,9810],[116,29,5,1,1,0,3386,4365],[116,29,9,1,1,0,64114,91593],[78,65,5,0,1,0,42773,69620],[85,65,5,0,1,0,41013,98217],[85,65,5,0,0,0,468982,784601],[73,99,5,0,1,0,15876,22672],[73,99,1,1,1,0,26871,31838],[68,77,6,1,1,0,9665,11580],[68,77,1,1,1,0,1046,1576],[68,77,0,1,1,0,643,1189],[68,77,7,1,1,0,933,2378],[68,77,9,1,1,0,7584,13591],[68,77,8,1,1,0,42748,42748],[68,77,5,0,1,0,80,235],[67,21,5,0,1,0,41405,100431],[68,77,3,1,1,0,776,985],[68,77,5,1,1,0,242,445],[101,116,10,1,1,0,30962,32544],[52,73,1,1,1,0,11704,16456],[98,73,5,0,1,0,30504,49249],[74,73,5,1,1,0,2282,3470],[74,73,1,1,1,0,6258,7206],[74,73,0,1,1,0,4151,6621],[74,73,9,1,1,0,25218,43167],[74,73,3,1,1,0,3540,3633],[74,73,4,1,1,0,93337,93337],[74,73,6,1,1,0,45431,48356],[74,73,7,1,1,0,9839,12382],[24,73,5,0,1,0,52465,52465],[77,73,5,0,1,0,6679,95917],[77,73,5,0,0,0,540320,1048243],[102,73,5,0,0,0,350076,350076],[102,73,5,0,1,0,29242,94746],[112,37,10,1,1,0,26150,27747],[85,37,10,1,1,0,10577,15959],[15,34,5,0,1,0,23911,86736],[101,115,5,0,0,0,306470,1339856],[101,115,5,0,1,0,13914,89887],[112,65,5,0,1,0,18853,38352],[85,32,5,0,0,0,354643,414711],[85,32,5,0,1,0,25886,72386],[78,32,5,0,1,0,43187,97737],[78,32,5,0,0,0,315597,711381],[112,32,5,0,0,0,733524,1150011],[112,32,5,0,1,0,24846,51783],[113,32,0,1,1,0,31953,52605],[68,113,1,1,1,0,3862,4712],[113,32,5,0,0,0,38286,45011],[113,32,5,0,1,0,11783,18197],[101,32,5,0,1,0,70661,80424],[101,33,10,1,1,0,28657,30152],[113,33,10,1,1,0,8705,9136],[112,33,10,1,1,0,20021,26049],[78,33,10,1,1,0,17294,21279],[85,95,5,0,0,0,183741,641476],[33,95,5,0,1,0,55775,55775],[103,95,5,0,1,0,88796,88796],[70,95,5,0,1,0,44880,90231],[17,95,5,0,1,0,27738,57560],[21,95,5,0,1,0,64937,96293],[88,21,5,0,1,0,11748,50421],[99,64,5,0,1,0,26317,67926],[68,107,9,1,1,0,28328,43164],[23,95,5,0,1,0,37235,97415],[23,95,5,0,0,0,256335,901142],[6,95,5,0,1,0,29463,95425],[6,95,5,0,0,0,1284449,1284449],[18,95,7,1,1,0,49470,49470],[18,95,5,0,1,0,74678,74678],[113,95,0,1,1,0,83180,83180],[32,95,5,0,1,0,80172,96926],[113,95,5,0,1,0,19225,65077],[110,95,5,0,0,0,425362,842135],[82,21,5,0,1,0,6476,34224],[82,21,5,0,0,0,187798,535673],[82,21,0,1,1,0,34337,90044],[95,21,5,0,1,0,5979,100361],[41,21,5,0,1,0,30308,99902],[12,21,0,1,1,0,74017,74017],[12,21,3,1,1,0,61146,64256],[12,21,5,0,1,0,3026,55137],[12,21,9,1,1,0,88897,88897],[12,21,5,0,0,0,331564,886683],[88,21,5,0,0,0,506142,506142],[86,47,10,1,1,0,9380,27458],[21,47,10,1,1,0,28242,33404],[109,117,5,0,1,0,21634,80960],[85,5,10,1,1,0,12761,12761],[112,66,10,1,1,0,29166,33518],[85,66,10,1,1,0,14892,18606],[91,75,9,1,1,0,52684,74435],[100,75,5,0,0,0,482861,680509],[100,75,5,0,1,0,11060,84630],[69,75,5,1,1,0,2493,3673],[69,75,7,1,1,0,9207,11867],[69,75,0,1,1,0,3725,6353],[69,75,6,1,1,0,36832,40448],[69,75,1,1,1,0,4409,6520],[69,75,3,1,1,0,3681,3827],[69,75,9,1,1,0,37997,42004],[17,75,5,0,0,0,298500,698963],[17,75,5,0,1,0,50240,88264],[21,75,5,0,1,0,19544,92254],[21,75,5,0,0,0,366993,366993],[23,75,5,0,0,0,383528,864588],[91,73,9,1,1,0,39134,71778],[91,73,7,1,1,0,17384,26377],[91,73,1,1,1,0,15129,19536],[91,73,0,1,1,0,15484,21467],[91,73,3,1,1,0,13529,14247],[91,73,5,1,1,0,4605,13386],[100,73,5,0,0,0,852208,852208],[65,21,9,1,1,0,27763,32012],[68,95,7,1,1,0,1456,5474],[68,95,9,1,1,0,16483,26644],[100,73,5,0,1,0,35541,89877],[69,73,3,1,1,0,4286,4831],[69,73,5,1,1,0,2900,4173],[69,73,0,1,1,0,6727,7313],[69,73,1,1,1,0,4966,7040],[69,73,7,1,1,0,12493,13686],[69,73,9,1,1,0,41445,51068],[69,73,6,1,1,0,56211,70081],[61,54,10,1,1,0,10910,22101],[65,21,0,1,1,0,6182,10189],[84,54,10,1,1,0,8239,11042],[97,54,10,1,1,0,18015,37296],[29,54,10,1,1,0,4404,5908],[36,54,10,1,1,0,30566,33739],[43,54,10,1,1,0,25897,28088],[4,25,5,0,0,0,507266,1251488],[4,25,5,0,1,0,27337,96299],[110,25,0,1,1,0,81550,81550],[6,54,10,1,1,0,9648,24221],[18,54,10,1,1,0,29249,38843],[32,54,10,1,1,0,12254,21419],[68,54,10,1,1,0,232,352],[115,54,10,1,1,0,3860,3860],[85,24,10,1,1,0,6858,29867],[70,24,10,1,1,0,26379,28266],[110,95,5,0,1,0,27569,96763],[112,95,5,0,0,0,207960,207960],[112,95,5,0,1,0,86555,86555],[58,95,7,1,1,0,41083,95088],[58,95,5,0,1,0,10782,39867],[58,95,1,1,1,0,69375,88088],[78,95,5,0,0,0,605773,660206],[58,95,5,0,0,0,45073,228621],[68,95,0,1,1,0,1668,2121],[78,95,5,0,1,0,8745,82034],[28,95,5,0,1,0,35794,94745],[28,95,5,0,0,0,614217,614217],[66,95,5,0,1,0,49731,49731],[60,95,5,0,0,0,178759,231174],[60,95,5,0,1,0,9054,27909],[60,95,0,1,1,0,38887,89023],[60,95,7,1,1,0,30747,30747],[73,103,1,1,1,0,26262,32134],[51,94,10,1,1,0,13728,13728],[56,82,10,1,1,0,32017,38555],[58,82,10,1,1,0,24307,36158],[49,82,10,1,1,0,17134,18339],[113,82,10,1,1,0,20147,20147],[104,15,5,0,1,0,28454,95515],[37,21,5,0,1,0,11373,99163],[46,21,5,0,1,0,6276,64004],[46,21,0,1,1,0,83120,89668],[46,21,7,1,1,0,65987,92370],[104,15,5,0,0,0,531350,1069508],[30,17,5,0,1,0,19042,94317],[30,17,5,0,0,0,226415,1115246],[99,17,5,0,1,0,75282,75282],[99,17,5,0,0,0,329433,720534],[63,17,5,0,1,0,20067,98754],[63,17,5,0,0,0,588342,832341],[102,17,5,0,1,0,22294,77881],[60,25,0,1,1,0,41689,98019],[58,25,5,0,0,0,26600,44082],[58,25,1,1,1,0,56778,91811],[58,25,9,1,1,0,62597,62597],[110,25,5,0,0,0,171526,252442],[58,25,5,0,1,0,14964,36273],[58,25,7,1,1,0,43888,88620],[65,21,7,1,1,0,4872,11609],[65,21,6,1,1,0,31243,43634],[65,21,3,1,1,0,4328,4621],[60,52,9,1,1,0,63493,63493],[113,81,0,1,1,0,75933,75933],[43,52,5,0,1,0,26946,76133],[6,52,5,0,0,0,533199,642065],[6,52,5,0,1,0,17485,95646],[60,52,7,1,1,0,14125,14125],[16,44,5,0,1,0,18419,98515],[33,44,5,0,1,0,1558,88593],[33,44,5,0,0,0,4404,920184],[3,44,0,1,1,0,76933,79297],[3,44,5,0,0,0,41853,51149],[3,44,5,0,1,0,5116,27986],[98,44,5,0,1,0,53506,70480],[98,44,5,0,0,0,1135521,1135521],[88,21,0,1,1,0,77234,79447],[81,21,5,0,1,0,2767,71311],[81,21,0,1,1,0,91862,91862],[107,44,5,0,0,0,410838,1167981],[107,44,5,0,1,0,14140,82158],[70,44,5,0,1,0,768,48870],[70,44,7,1,1,0,51964,74318],[113,81,5,0,1,0,6212,64277],[70,44,5,0,0,0,3386,555013],[70,44,9,1,1,0,67556,67556],[85,33,10,1,1,0,14854,15522],[81,21,5,0,0,0,1004865,1372917],[22,21,0,1,1,0,62176,92574],[22,21,5,0,0,0,98969,1333923],[22,21,5,0,1,0,8152,61420],[9,21,0,1,1,0,53109,99842],[9,21,5,0,1,0,12047,48795],[9,21,5,0,0,0,242176,613803],[14,21,5,0,1,0,36059,100501],[94,21,0,1,1,0,52401,85299],[89,21,5,0,1,0,56479,99675],[102,17,5,0,0,0,177980,382425],[23,17,5,0,1,0,9304,74448],[23,17,5,0,0,0,182935,332120],[17,73,5,0,1,0,13579,97167],[17,73,5,0,0,0,200883,1120302],[21,73,5,0,0,0,1216925,1216925],[21,73,5,0,1,0,20053,92512],[23,73,5,0,0,0,395977,956225],[23,73,5,0,1,0,19850,96244],[58,73,5,0,1,0,10792,33433],[58,73,5,0,0,0,28188,154071],[0,73,7,1,1,0,22540,27263],[0,73,9,1,1,0,76922,81406],[0,73,0,1,1,0,18972,27995],[0,73,1,1,1,0,17778,24079],[68,95,1,1,1,0,1952,3061],[68,95,5,0,1,0,336,671],[68,95,6,1,1,0,18778,39586],[0,73,3,1,1,0,17749,18422],[70,73,5,0,0,0,899120,1068475],[70,73,5,0,1,0,10804,85769],[103,73,5,0,1,0,66100,66100],[101,122,10,1,1,0,36039,38778],[116,90,10,1,1,0,3279,3501],[103,44,5,0,1,0,9270,98474],[103,44,5,0,0,0,775801,1401134],[113,44,5,0,1,0,4295,11759],[113,44,5,0,0,0,5265,10316],[113,44,0,1,1,0,15983,29410],[85,44,5,0,0,0,121689,286945],[85,44,0,1,1,0,47206,47206],[39,44,5,0,1,0,50820,50820],[39,44,5,0,0,0,995113,995113],[108,44,5,0,1,0,15109,95704],[108,44,5,0,0,0,316691,864138],[109,44,5,0,1,0,10094,88514],[60,44,5,0,1,0,378,5889],[60,44,7,1,1,0,12219,12219],[68,102,10,1,1,0,2192,2222],[52,121,10,1,1,0,15342,20078],[54,121,10,1,1,0,7496,11150],[51,93,3,1,1,0,19459,19658],[51,93,5,1,1,0,2058,16244],[51,93,7,1,1,0,18164,29457],[51,93,9,1,1,0,37508,49801],[51,93,6,1,1,0,79989,79989],[51,93,1,1,1,0,21374,26140],[51,93,0,1,1,0,20106,25198],[59,81,5,0,1,0,47524,98656],[56,81,5,0,0,0,268292,1150193],[56,81,5,0,1,0,33403,78877],[58,81,7,1,1,0,78376,95792],[58,81,1,1,1,0,80657,80657],[61,95,5,0,1,0,29688,75599],[32,95,5,0,0,0,592546,1082758],[68,95,4,1,1,0,41739,41739],[61,95,5,0,0,0,719227,719227],[84,95,5,0,0,0,306609,737558],[84,95,5,0,1,0,27238,97316],[36,95,5,0,1,0,72401,72401],[97,95,5,0,1,0,50014,98015],[68,95,2,1,1,0,63435,63435],[17,41,5,0,1,0,40728,96688],[17,41,5,0,0,0,164963,573452],[21,41,5,0,1,0,27883,86578],[23,41,5,0,0,0,324851,1084029],[23,41,5,0,1,0,38055,94817],[58,41,5,0,1,0,9373,63664],[58,41,1,1,1,0,92141,92141],[58,41,5,0,0,0,169563,764435],[91,41,7,1,1,0,18786,30551],[91,41,3,1,1,0,18753,19568],[91,41,0,1,1,0,18247,29025],[91,41,9,1,1,0,68086,94014],[91,41,1,1,1,0,21531,25844],[91,41,5,1,1,0,6743,18025],[35,41,5,0,1,0,59697,59697],[35,41,5,0,0,0,639277,639277],[65,21,5,1,1,0,1058,4132],[44,21,5,0,1,0,19483,100048],[58,81,5,0,0,0,32354,476296],[58,81,5,0,1,0,25131,72406],[58,81,0,1,1,0,83499,83499],[49,81,0,1,1,0,21396,28839],[49,81,9,1,1,0,51260,53748],[49,81,1,1,1,0,22691,40033],[49,81,5,0,0,0,59332,183564],[49,81,7,1,1,0,22862,31788],[49,81,5,0,1,0,5365,19940],[49,81,3,1,1,0,24075,24150],[113,81,5,0,0,0,268224,420411],[114,12,10,1,1,0,17255,19166],[58,12,10,1,1,0,14075,16284],[96,21,5,0,0,0,1290212,1290212],[13,21,5,0,0,0,516252,1216913],[46,21,5,0,0,0,401312,1007597],[89,21,5,0,0,0,203480,1232800],[62,21,5,0,0,0,598134,1392467],[60,44,0,1,1,0,6321,12653],[60,44,9,1,1,0,50171,50171],[60,44,5,0,0,0,26667,68380],[84,44,5,0,0,0,1709,307165],[84,44,5,0,1,0,234,36952],[97,44,5,0,1,0,20210,97362],[97,44,5,0,0,0,211299,771669],[92,44,7,1,1,0,42688,84156],[92,44,5,0,1,0,7531,40088],[92,44,1,1,1,0,76070,85105],[92,44,0,1,1,0,40975,42331],[92,44,5,0,0,0,151294,320513],[92,44,3,1,1,0,50686,75334],[105,44,5,0,0,0,513254,1218024],[23,75,5,0,1,0,28394,75696],[58,75,0,1,1,0,27792,76667],[68,87,0,1,1,0,1198,1361],[58,75,5,0,1,0,8770,27279],[70,75,5,0,0,0,319961,1002712],[70,75,5,0,1,0,9733,86376],[103,75,5,0,0,0,576551,1213978],[103,75,5,0,1,0,79964,79964],[0,75,1,1,1,0,14756,21898],[0,75,5,1,1,0,7727,14466],[0,75,9,1,1,0,69673,95714],[0,75,7,1,1,0,20081,25692],[0,75,3,1,1,0,15252,15897],[68,73,7,1,1,0,418,4093],[68,95,5,1,1,0,719,1010],[68,95,3,1,1,0,1564,2156],[0,75,0,1,1,0,18558,24433],[0,75,6,1,1,0,95106,95106],[48,75,5,0,0,0,388182,1237470],[60,52,5,0,1,0,4917,8904],[101,52,5,0,1,0,79896,98554],[60,52,5,0,0,0,74111,94507],[60,52,0,1,1,0,16133,20853],[76,69,7,1,1,0,17422,20723],[76,69,0,1,1,0,12026,15172],[76,69,9,1,1,0,58923,79136],[76,69,3,1,1,0,8703,9523],[76,69,5,0,1,0,3917,7837],[76,69,1,1,1,0,11040,14439],[101,69,5,0,0,0,546342,809624],[0,3,10,1,1,0,7827,7827],[110,119,10,1,1,0,19160,24548],[0,73,5,1,1,0,10015,16868],[3,73,5,0,0,0,307438,831574],[3,73,5,0,1,0,16832,95897],[48,73,5,0,1,0,45426,94942],[48,73,5,0,0,0,471483,471483],[113,73,5,0,1,0,5037,48522],[113,73,0,1,1,0,57793,98537],[113,73,5,0,0,0,60216,366497],[110,73,5,0,1,0,16325,70187],[110,73,5,0,0,0,291193,371342],[63,73,5,0,0,0,1141745,1141745],[63,73,5,0,1,0,4615,70565],[85,73,5,0,1,0,17119,97778],[85,73,5,0,0,0,227390,720451],[116,73,9,1,1,0,30357,30357],[112,73,5,0,0,0,421957,870366],[112,73,5,0,1,0,83606,89837],[105,44,5,0,1,0,16071,95956],[28,44,5,0,1,0,8495,98595],[28,44,5,0,0,0,193017,920816],[111,44,5,0,1,0,34517,98442],[100,44,5,0,0,0,304055,915531],[100,44,5,0,1,0,11398,96908],[78,44,5,0,1,0,18739,84058],[78,44,5,0,0,0,146156,399952],[17,44,0,1,1,0,90136,98355],[17,44,5,0,1,0,19016,80093],[17,44,5,0,0,0,179155,535286],[58,44,0,1,1,0,12854,95585],[116,73,3,1,1,0,3214,3214],[116,73,5,0,1,0,1074,1223],[116,73,0,1,1,0,4705,5006],[58,44,5,0,1,0,1365,12600],[58,44,5,0,0,0,9981,21534],[60,12,10,1,1,0,7384,8112],[68,83,0,1,1,0,3802,4153],[68,83,6,1,1,0,73848,73848],[68,83,9,1,1,0,26280,38551],[68,83,5,1,1,0,1690,2923],[68,83,5,0,1,0,1455,1467],[68,83,3,1,1,0,3243,4259],[68,83,1,1,1,0,5415,6544],[68,83,7,1,1,0,8975,10671],[101,51,10,1,1,0,28408,29415],[60,51,10,1,1,0,4597,5438],[84,51,10,1,1,0,15209,16718],[32,51,10,1,1,0,23769,25960],[68,43,7,1,1,0,311,1372],[105,51,10,1,1,0,31711,37184],[78,51,10,1,1,0,17173,21029],[115,43,9,1,1,0,26443,33793],[115,43,5,0,1,0,1187,2903],[115,43,0,1,1,0,5755,8073],[115,43,3,1,1,0,3515,4291],[115,43,7,1,1,0,6566,11809],[115,43,1,1,1,0,6297,8072],[68,43,1,1,1,0,293,772],[97,43,5,0,0,0,172091,847781],[68,43,3,1,1,0,246,548],[36,43,5,0,0,0,383669,1293084],[36,43,5,0,1,0,16663,95024],[43,43,5,0,0,0,471629,1035596],[48,75,5,0,1,0,39855,80586],[116,73,1,1,1,0,6050,6178],[68,43,5,0,1,0,29,67],[68,43,5,1,1,0,70,202],[113,75,0,1,1,0,33458,54833],[113,75,5,0,0,0,14908,182523],[113,75,5,0,1,0,7621,20700],[4,75,5,0,0,0,390701,873455],[4,75,5,0,1,0,8315,96187],[108,75,5,0,0,0,465453,465453],[108,75,5,0,1,0,36269,59861],[50,75,5,0,1,0,58994,58994],[2,75,5,0,0,0,723221,1139443],[2,75,5,0,1,0,22277,95009],[16,75,5,0,1,0,25774,81813],[20,75,5,0,1,0,48177,69644],[25,75,5,0,1,0,67522,67522],[64,75,5,0,1,0,26575,26575],[58,73,7,1,1,0,35235,88357],[68,41,9,1,1,0,3140,33890],[68,43,0,1,1,0,238,277],[58,73,1,1,1,0,46154,92845],[58,73,9,1,1,0,66907,66907],[58,73,0,1,1,0,62092,62493],[78,73,5,0,0,0,467054,1037418],[78,73,5,0,1,0,34026,95258],[92,73,5,0,1,0,28323,90030],[92,73,5,0,0,0,236098,831755],[105,73,5,0,1,0,39562,66486],[7,73,5,0,0,0,451261,1082099],[48,41,5,0,0,0,674238,1269123],[48,41,5,0,1,0,27070,67594],[113,41,5,0,1,0,22905,83043],[113,41,5,0,0,0,369579,510686],[110,41,5,0,0,0,319879,713323],[110,41,5,0,1,0,40195,93438],[59,41,5,0,1,0,47850,47850],[63,41,5,0,1,0,16672,85694],[85,41,5,0,1,0,21597,93574],[85,41,5,0,0,0,728524,728524],[93,41,5,0,1,0,49742,64616],[70,41,5,0,1,0,20103,85577],[70,41,5,0,0,0,575830,925432],[26,41,5,0,0,0,307503,307503],[100,41,5,0,1,0,43015,87917],[100,41,5,0,0,0,1143003,1143003],[58,41,7,1,1,0,84031,96248],[78,41,5,0,1,0,17301,91869],[78,41,5,0,0,0,71384,865206],[60,41,0,1,1,0,57825,80886],[60,41,5,0,1,0,1755,39377],[60,41,5,0,0,0,216499,280389],[60,41,7,1,1,0,40548,40548],[61,41,5,0,1,0,4418,95325],[61,41,5,0,0,0,279719,1242234],[84,41,5,0,1,0,20973,96630],[84,41,5,0,0,0,357605,548227],[97,41,5,0,1,0,29858,83791],[29,41,7,1,1,0,20553,26665],[29,41,0,1,1,0,20060,31028],[29,41,5,1,1,0,7438,16988],[29,41,3,1,1,0,17442,18081],[43,43,5,0,1,0,20139,89098],[79,43,5,0,1,0,19006,77648],[79,43,5,0,0,0,160239,845518],[79,43,7,1,1,0,90092,94654],[15,43,5,0,1,0,32999,98301],[84,43,5,0,1,0,163,26115],[97,43,5,0,1,0,12218,97434],[84,43,5,0,0,0,1586,204442],[5,43,5,1,1,0,3890,5764],[32,43,5,0,0,0,8675,369145],[101,43,5,0,0,0,235040,1376847],[101,43,5,0,1,0,22782,97425],[68,43,8,1,1,0,16414,16414],[68,43,6,1,1,0,888,3317],[85,44,5,0,1,0,11657,45923],[93,44,5,0,1,0,87036,92765],[112,44,5,0,0,0,277141,671394],[112,44,5,0,1,0,5190,96965],[77,44,5,0,1,0,14217,56599],[77,44,0,1,1,0,69104,69104],[77,44,5,0,0,0,70187,85607],[68,41,0,1,1,0,2411,2925],[57,21,9,1,1,0,33759,33759],[78,4,0,1,1,0,83066,83066],[78,4,5,0,0,0,366797,407014],[78,4,5,0,1,0,10361,67482],[101,4,5,0,0,0,465604,1303758],[85,4,5,0,1,0,18148,52283],[85,4,5,0,0,0,115915,270693],[101,4,5,0,1,0,51490,97795],[68,88,10,1,1,0,714,732],[7,73,5,0,1,0,11436,96609],[28,73,5,0,1,0,24304,93696],[28,73,5,0,0,0,1082779,1246768],[66,73,5,0,1,0,22659,22659],[5,73,5,1,1,0,6788,9277],[42,73,5,0,1,0,51929,74222],[56,73,5,0,0,0,138970,1299159],[56,73,5,0,1,0,25874,88652],[60,73,5,0,1,0,5217,16195],[60,73,0,1,1,0,21060,41262],[61,73,5,0,0,0,122194,1081872],[61,73,5,0,1,0,27709,93097],[84,73,5,0,1,0,19434,86323],[60,73,5,0,0,0,69090,154492],[60,73,7,1,1,0,16944,16944],[84,73,5,0,0,0,280517,702920],[75,75,5,0,1,0,45519,89097],[114,75,5,0,1,0,5230,13317],[114,75,1,1,1,0,19361,22411],[114,75,0,1,1,0,24509,30288],[114,75,7,1,1,0,20616,25797],[114,75,3,1,1,0,14370,15545],[67,22,10,1,1,0,24991,32154],[65,22,10,1,1,0,1571,3182],[13,22,10,1,1,0,14938,21652],[114,75,9,1,1,0,77530,98310],[85,75,5,0,1,0,18090,57735],[85,75,5,0,0,0,176763,350853],[86,75,5,0,0,0,731050,945979],[86,75,5,0,1,0,13515,81342],[93,75,5,0,0,0,468213,468213],[112,75,5,0,0,0,698277,698277],[112,75,5,0,1,0,48744,86662],[116,75,9,1,1,0,33123,39526],[29,41,6,1,1,0,93471,93471],[29,41,9,1,1,0,57799,69693],[29,41,1,1,1,0,18504,23635],[105,41,5,0,0,0,909630,909630],[43,41,5,0,0,0,343122,343122],[79,41,5,0,1,0,48127,73122],[31,22,10,1,1,0,35823,36774],[6,41,5,0,0,0,325694,843205],[6,41,5,0,1,0,20606,98701],[18,41,5,0,1,0,79319,87017],[32,41,5,0,0,0,359891,359891],[32,41,5,0,1,0,13105,91851],[61,43,5,0,1,0,15494,93221],[60,43,7,1,1,0,9880,9880],[60,43,5,0,1,0,1550,5134],[60,43,0,1,1,0,6359,11442],[61,43,5,0,0,0,212358,500210],[60,43,5,0,0,0,12417,64575],[60,43,9,1,1,0,53304,53304],[56,43,5,0,0,0,2097,419731],[111,43,5,0,0,0,408821,1340174],[111,43,5,0,1,0,20039,98655],[66,43,5,0,0,0,274328,644719],[90,21,5,0,1,0,23962,98847],[106,21,5,0,1,0,68964,99729],[68,41,5,0,1,0,936,1213],[66,43,5,0,1,0,28877,94760],[28,43,5,0,0,0,160621,656379],[28,43,5,0,1,0,8706,98576],[78,43,5,0,0,0,119572,361628],[62,21,5,0,1,0,5284,87754],[62,21,0,1,1,0,90675,90675],[47,21,5,0,0,0,1868,331076],[47,21,5,0,1,0,497,15054],[11,21,5,0,0,0,1017321,1017321],[11,21,5,0,1,0,22852,99913],[10,21,5,0,0,0,304166,818833],[10,21,0,1,1,0,60590,98406],[10,21,5,0,1,0,8224,53982],[71,21,5,0,1,0,633,61435],[71,21,0,1,1,0,70478,98583],[45,21,5,0,1,0,30491,100281],[45,21,3,1,1,0,21338,21338],[57,21,5,0,1,0,647,28377],[116,75,7,1,1,0,4290,7955],[116,75,0,1,1,0,3365,4436],[116,75,6,1,1,0,18655,18655],[116,75,5,1,1,0,1434,2049],[116,75,1,1,1,0,4786,5330],[116,75,5,0,1,0,587,1398],[58,75,5,0,0,0,35676,56632],[78,75,5,0,1,0,12240,97842],[78,75,5,0,0,0,278389,592816],[92,75,5,0,0,0,201933,1412739],[92,75,5,0,1,0,15054,98370],[105,75,5,0,1,0,40176,66432],[7,75,5,0,0,0,254225,1317413],[7,75,5,0,1,0,30611,98712],[28,75,5,0,1,0,19799,95435],[68,73,0,1,1,0,1216,1667],[57,21,7,1,1,0,35207,39463],[57,21,3,1,1,0,30111,33708],[57,21,1,1,1,0,29464,40468],[77,51,10,1,1,0,20216,23051],[58,51,10,1,1,0,10366,12144],[85,51,10,1,1,0,12910,14536],[23,51,10,1,1,0,28418,28418],[112,51,10,1,1,0,10255,22371],[42,51,10,1,1,0,25215,25458],[73,51,10,1,1,0,11344,11344],[113,51,10,1,1,0,7702,7750],[101,31,5,0,0,0,597488,597488],[101,31,5,0,1,0,50513,79173],[97,73,5,0,1,0,46310,96684],[29,73,0,1,1,0,16752,23864],[29,73,5,1,1,0,6432,12626],[29,73,1,1,1,0,13261,19123],[29,73,3,1,1,0,12714,13754],[5,41,5,1,1,0,10055,13928],[68,41,6,1,1,0,22214,45334],[68,41,7,1,1,0,5517,8859],[29,73,9,1,1,0,45571,76578],[29,73,7,1,1,0,16139,22036],[36,73,5,0,1,0,15207,60781],[36,73,5,0,0,0,529098,529098],[43,73,5,0,1,0,12586,12586],[79,73,5,0,1,0,74751,95759],[6,73,5,0,1,0,21420,94120],[18,73,5,0,1,0,69233,75982],[32,73,5,0,1,0,41726,93045],[32,73,5,0,0,0,681719,681719],[57,21,5,0,0,0,6689,98070],[8,21,5,0,0,0,630458,1351290],[68,21,6,1,1,0,18672,18672],[68,21,1,1,1,0,3412,6806],[68,21,5,1,1,0,2582,4641],[68,21,7,1,1,0,3112,12033],[68,87,5,0,1,0,328,342],[68,113,9,1,1,0,26894,33696],[68,21,3,1,1,0,4885,6033],[68,21,0,1,1,0,4788,5518],[68,21,5,0,1,0,842,2462],[68,21,9,1,1,0,15621,21919],[90,21,5,0,0,0,735499,735499],[59,40,5,0,1,0,68678,85889],[49,40,5,0,1,0,6200,20122],[49,40,0,1,1,0,38883,42704],[49,40,3,1,1,0,23532,23549],[49,40,7,1,1,0,25735,33647],[49,40,5,0,0,0,130581,165694],[49,40,1,1,1,0,25968,27283],[116,110,10,1,1,0,5418,5675],[85,58,10,1,1,0,14416,15203],[112,58,10,1,1,0,26785,28816],[68,41,1,1,1,0,4590,5806],[71,22,10,1,1,0,9283,21105],[57,22,10,1,1,0,14201,17938],[60,58,10,1,1,0,5521,6111],[84,58,10,1,1,0,15391,17028],[113,58,10,1,1,0,7995,9842],[110,58,10,1,1,0,16770,16770],[22,22,10,1,1,0,16219,20339],[1,22,10,1,1,0,12204,28555],[68,22,10,1,1,0,3483,4025],[88,22,10,1,1,0,12241,22368],[12,22,10,1,1,0,8113,16843],[82,22,10,1,1,0,636,8591],[28,75,5,0,0,0,336640,1361898],[66,75,5,0,1,0,32407,45701],[111,75,5,0,1,0,57725,97594],[5,75,5,1,1,0,5855,7113],[42,75,5,0,1,0,20178,89731],[68,73,9,1,1,0,16327,22848],[56,75,5,0,1,0,9662,97946],[56,75,5,0,0,0,251974,1256667],[60,75,5,0,0,0,70351,114032],[60,75,5,0,1,0,3539,11585],[60,75,7,1,1,0,13444,13444],[60,75,9,1,1,0,68505,68505],[60,75,0,1,1,0,11800,30260],[61,75,5,0,0,0,965257,965257],[61,75,5,0,1,0,23471,98815],[84,75,5,0,0,0,172067,437168],[45,22,10,1,1,0,4221,32444],[8,22,10,1,1,0,19946,21897],[10,22,10,1,1,0,10218,15170],[11,22,10,1,1,0,15260,29109],[47,22,10,1,1,0,2707,6447],[68,73,3,1,1,0,1086,1503],[68,73,5,1,1,0,453,740],[68,87,7,1,1,0,2387,3132],[46,22,10,1,1,0,7432,16244],[14,22,10,1,1,0,5634,32573],[94,22,10,1,1,0,8009,19702],[4,22,10,1,1,0,11375,24002],[9,22,10,1,1,0,9991,16058],[80,22,10,1,1,0,7894,18450],[38,22,10,1,1,0,23044,25492],[44,22,10,1,1,0,7911,38164],[96,22,10,1,1,0,23906,34175],[0,2,1,1,1,0,12351,18318],[0,2,0,1,1,0,14434,17736],[0,2,5,1,1,0,4234,10830],[0,2,9,1,1,0,47286,72787],[68,113,6,1,1,0,53182,53182],[0,2,7,1,1,0,13326,21159],[0,2,3,1,1,0,10926,12766],[101,6,10,1,1,0,35383,35383],[116,89,9,1,1,0,63072,65274],[116,89,5,0,1,0,1767,1833],[116,89,7,1,1,0,10137,11769],[116,89,1,1,1,0,6601,6983],[84,75,5,0,1,0,14344,65496],[97,75,5,0,1,0,45578,88294],[29,75,7,1,1,0,15798,20454],[29,75,0,1,1,0,11852,16610],[29,75,5,1,1,0,4609,10702],[29,75,1,1,1,0,11768,16589],[29,75,3,1,1,0,10942,11181],[29,75,6,1,1,0,86209,86209],[29,75,9,1,1,0,65125,82434],[43,75,5,0,1,0,60554,63666],[79,75,5,0,0,0,200525,200525],[79,75,5,0,1,0,57956,97983],[6,75,5,0,1,0,14911,95087],[6,75,5,0,0,0,252970,1324703],[68,73,1,1,1,0,1445,2025],[68,73,6,1,1,0,5709,15015],[68,73,8,1,1,0,91116,91116],[18,75,5,0,1,0,38741,64245],[68,73,2,1,1,0,40384,40384],[68,73,4,1,1,0,17812,17812],[6,73,5,0,0,0,363911,864641],[85,23,5,0,0,0,339123,544492],[85,23,5,0,1,0,12707,97361],[70,23,5,0,0,0,466710,839490],[70,23,5,0,1,0,31817,55374],[70,23,7,1,1,0,57321,67230],[18,75,5,0,0,0,1439151,1439151],[32,75,5,0,0,0,77389,1159992],[32,75,5,0,1,0,43644,96243],[68,113,7,1,1,0,6189,8245],[33,75,5,0,0,0,630618,1469171],[74,75,5,1,1,0,1778,2856],[74,75,0,1,1,0,4125,5587],[74,75,1,1,1,0,2995,6424],[74,75,9,1,1,0,31023,39701],[74,75,3,1,1,0,3027,3360],[74,75,7,1,1,0,8160,10514],[74,75,4,1,1,0,38835,38835],[74,75,6,1,1,0,23707,26628],[77,75,5,0,1,0,24438,89112],[77,75,5,0,0,0,127000,460861],[102,75,5,0,0,0,305901,707115],[3,58,10,1,1,0,13007,15322],[68,87,3,1,1,0,1071,1255],[68,87,8,1,1,0,91586,91586],[68,87,1,1,1,0,1358,1754],[68,87,6,1,1,0,15130,15130],[110,75,0,1,1,0,64587,80062],[115,79,9,1,1,0,54631,56641],[115,79,1,1,1,0,9649,13546],[115,79,7,1,1,0,15809,18050],[58,7,5,0,0,0,563490,691684],[58,7,5,0,1,0,24421,69226],[58,7,7,1,1,0,69597,92013],[19,7,5,0,1,0,2792,8448],[19,7,6,1,1,0,93162,93162],[110,75,5,0,1,0,19458,37715],[110,75,5,0,0,0,200957,248426],[63,75,5,0,1,0,7935,60874],[115,75,7,1,1,0,10931,15376],[115,75,5,0,1,0,2187,4660],[115,75,1,1,1,0,10360,11128],[115,75,9,1,1,0,45370,49141],[115,75,3,1,1,0,6729,7524],[115,75,0,1,1,0,9340,12263],[68,113,0,1,1,0,2396,2712],[70,55,5,0,0,0,272392,804902],[116,89,5,1,1,0,2127,2611],[116,89,0,1,1,0,4679,5211],[68,113,3,1,1,0,2778,3124],[70,55,5,0,1,0,14800,97713],[84,55,5,0,0,0,4365,335081],[84,55,5,0,1,0,1252,46437],[6,55,5,0,0,0,172685,517175],[6,55,5,0,1,0,24971,97587],[19,7,1,1,1,0,10506,13210],[87,14,5,0,0,0,4090,33909],[68,111,5,1,1,0,880,1386],[68,111,0,1,1,0,1701,2668],[33,19,5,0,1,0,38793,68730],[33,19,5,0,0,0,320548,320548],[77,19,5,0,0,0,489763,489763],[77,19,5,0,1,0,94072,94072],[60,26,10,1,1,0,6716,10104],[110,26,10,1,1,0,26284,26284],[58,26,10,1,1,0,16606,23849],[87,14,5,0,1,0,13965,74370],[104,16,10,1,1,0,22087,30790],[107,45,10,1,1,0,30818,34998],[85,45,10,1,1,0,10683,13954],[103,45,10,1,1,0,24429,36982],[93,45,10,1,1,0,32586,37037],[116,39,10,1,1,0,2981,3171],[6,57,5,0,1,0,29270,91802],[6,57,5,0,0,0,1070865,1070865],[84,57,5,0,1,0,1901,66043],[84,57,5,0,0,0,4750,491132],[60,57,7,1,1,0,14377,14377],[85,57,5,0,0,0,250995,389619],[112,57,5,0,0,0,651951,651951],[60,57,5,0,1,0,6498,10362],[60,57,0,1,1,0,21608,27227],[60,57,5,0,0,0,86338,120266],[116,89,3,1,1,0,3882,4028],[63,18,10,1,1,0,23313,34484],[102,18,10,1,1,0,8422,17342],[30,18,10,1,1,0,39819,48544],[101,98,10,1,1,0,32552,32552],[110,118,5,0,0,0,374271,781365],[110,118,5,0,1,0,22292,97846],[101,57,5,0,1,0,10718,10718],[60,39,10,1,1,0,10112,13053],[68,111,6,1,1,0,53076,53076],[68,111,7,1,1,0,5552,7594],[68,111,9,1,1,0,33962,36891],[58,39,10,1,1,0,13038,16506],[68,39,10,1,1,0,1402,1744],[42,76,10,1,1,0,25554,33971],[56,76,10,1,1,0,18553,21175],[78,76,10,1,1,0,19786,21556],[105,41,5,0,1,0,18747,34478],[78,57,5,0,0,0,87284,1086225],[78,57,5,0,1,0,25528,97947],[3,57,5,0,1,0,21849,50285],[113,57,5,0,1,0,6602,20169],[113,57,0,1,1,0,46681,58884],[113,57,5,0,0,0,55456,160092],[3,57,0,1,1,0,75766,75766],[3,57,5,0,0,0,92479,329969],[85,57,5,0,1,0,26016,70341],[110,57,5,0,0,0,205476,331525],[110,57,5,0,1,0,15013,43693],[48,57,5,0,1,0,62701,81905],[116,30,10,1,1,0,3527,4054],[101,0,5,0,1,0,57282,63196],[78,43,0,1,1,0,81032,98513],[92,43,1,1,1,0,32799,94087],[92,43,3,1,1,0,35185,62460],[92,43,5,0,1,0,4165,28680],[92,43,0,1,1,0,42017,75663],[92,43,5,0,0,0,70944,289978],[92,43,9,1,1,0,80281,80281],[92,43,7,1,1,0,29508,78800],[116,43,5,0,1,0,477,545],[105,43,5,0,0,0,243860,1247312],[105,43,5,0,1,0,10699,94450],[7,43,5,0,1,0,9970,54047],[7,43,0,1,1,0,68516,96067],[7,43,5,0,0,0,79352,332813],[78,43,5,0,1,0,5129,67060],[112,43,5,0,1,0,9443,98865],[112,43,5,0,0,0,119957,484471],[6,43,0,1,1,0,75359,93667],[58,43,5,0,1,0,586,11126],[76,43,1,1,1,0,3930,8276],[76,43,5,0,1,0,1270,3737],[76,43,3,1,1,0,3937,5161],[76,43,0,1,1,0,4166,9426],[76,43,6,1,1,0,21202,73319],[76,43,9,1,1,0,42456,51071],[116,43,5,1,1,0,852,1147],[116,43,9,1,1,0,12774,20751],[116,43,1,1,1,0,2093,3069],[116,43,3,1,1,0,2264,2390],[116,43,0,1,1,0,1680,3309],[116,43,6,1,1,0,7632,7632],[116,43,7,1,1,0,1980,5041],[55,43,5,0,0,0,700752,1308301],[58,43,0,1,1,0,14210,59807],[58,43,5,0,0,0,4769,14134],[93,43,5,0,1,0,69112,97419],[110,43,5,0,0,0,80547,184086],[110,43,0,1,1,0,33082,64259],[110,43,5,0,1,0,5531,25974],[113,43,5,0,1,0,1446,8693],[113,43,0,1,1,0,9191,19698],[32,43,0,1,1,0,76277,95064],[100,43,5,0,0,0,96171,583837],[100,43,5,0,1,0,3104,98486],[71,43,5,0,0,0,2989,772000],[71,43,5,0,1,0,463,96618],[0,43,3,1,1,0,10167,10171],[0,43,5,1,1,0,3233,9275],[18,43,5,0,1,0,13093,97996],[32,43,5,0,1,0,7536,67761],[6,43,5,0,0,0,100568,362744],[18,43,5,0,0,0,269222,571497],[21,43,5,0,1,0,18611,98153],[6,43,5,0,1,0,7869,75311],[55,43,5,0,1,0,25631,93586],[104,43,7,1,1,0,87962,87962],[107,43,5,0,0,0,273784,831471],[107,43,5,0,1,0,28557,97837],[21,43,5,0,0,0,256667,1243940],[23,43,5,0,1,0,7882,48708],[23,43,5,0,0,0,67258,183996],[23,43,0,1,1,0,90090,90090],[17,43,5,0,0,0,98933,997342],[17,43,5,0,1,0,7504,97506],[87,43,5,0,0,0,603218,603218],[87,43,5,0,1,0,19187,75862],[103,43,5,0,1,0,9203,94187],[103,43,5,0,0,0,298421,1077290],[70,43,5,0,0,0,2220,465290],[70,43,7,1,1,0,41892,64012],[70,43,9,1,1,0,83844,83844],[69,43,3,1,1,0,3111,3250],[0,43,0,1,1,0,13430,16518],[0,43,7,1,1,0,14360,20123],[0,43,1,1,1,0,13607,14637],[0,43,9,1,1,0,30460,51408],[51,43,9,1,1,0,31286,57039],[51,43,3,1,1,0,5343,6217],[51,43,0,1,1,0,5917,7906],[51,43,5,1,1,0,2806,5087],[51,43,6,1,1,0,27489,47843],[51,43,7,1,1,0,7226,15128],[51,43,1,1,1,0,7639,9885],[42,43,5,0,0,0,89327,382484],[42,43,0,1,1,0,78029,78029],[42,43,5,0,1,0,17942,69484],[42,43,7,1,1,0,69917,87861],[56,43,5,0,1,0,279,43781],[85,43,5,0,1,0,6236,24633],[86,43,5,0,0,0,206094,1325166],[86,43,5,0,1,0,12015,97120],[93,43,5,0,0,0,834729,994954],[33,43,5,0,0,0,2665,1271176],[33,43,5,0,1,0,460,98017],[85,43,0,1,1,0,29655,89456],[85,43,5,0,0,0,78370,179735],[63,43,5,0,0,0,230663,1314650],[63,43,5,0,1,0,11352,92378],[30,43,5,0,1,0,16816,93566],[77,43,5,0,1,0,3574,50096],[102,43,5,0,0,0,100015,265514],[102,43,5,0,1,0,6468,54363],[102,43,0,1,1,0,69580,76346],[76,43,7,1,1,0,9675,14952],[76,43,2,1,1,0,86438,86438],[24,43,5,0,1,0,79061,79061],[77,43,0,1,1,0,52392,98858],[77,43,5,0,0,0,63264,68831],[20,43,5,0,1,0,40360,94879],[74,43,9,1,1,0,18458,24020],[91,43,5,1,1,0,4209,8390],[91,43,1,1,1,0,10406,12032],[26,43,5,0,1,0,25843,82142],[20,43,5,0,0,0,491883,946603],[91,43,0,1,1,0,11184,13649],[91,43,7,1,1,0,15641,19021],[91,43,6,1,1,0,69138,71451],[91,43,9,1,1,0,35662,60799],[91,43,3,1,1,0,8458,9565],[104,43,5,0,0,0,169065,877662],[50,43,5,0,1,0,32236,97007],[50,43,5,0,0,0,207089,1394469],[99,43,5,0,1,0,33171,48588],[72,43,5,0,0,0,958802,958802],[72,43,5,0,1,0,63454,63454],[98,43,5,0,0,0,667526,988365],[98,43,5,0,1,0,88544,88544],[104,43,5,0,1,0,14518,97680],[3,43,0,1,1,0,30988,96259],[3,43,5,0,1,0,2963,27116],[3,43,5,0,0,0,24793,41550],[27,43,5,0,1,0,36679,90952],[114,43,0,1,1,0,8821,17078],[114,43,5,0,1,0,2522,7888],[114,43,9,1,1,0,81679,92981],[114,43,3,1,1,0,8258,11039],[114,43,7,1,1,0,15795,19528],[114,43,6,1,1,0,25707,85698],[114,43,1,1,1,0,10410,13182],[30,43,5,0,0,0,222467,1351037],[113,43,5,0,0,0,76,5018],[39,43,5,0,1,0,52040,80815],[25,43,5,0,1,0,50098,91162],[25,43,5,0,0,0,875099,875099],[64,43,5,0,1,0,25123,97863],[75,43,5,0,0,0,1278210,1278210],[75,43,5,0,1,0,29452,94901],[4,43,5,0,0,0,151374,1070681],[4,43,5,0,1,0,9582,95021],[108,43,5,0,0,0,297255,1224420],[108,43,5,0,1,0,13032,84996],[48,43,5,0,0,0,355361,1459541],[34,43,5,0,0,0,842775,842775],[34,43,5,0,1,0,79982,81798],[35,43,5,0,1,0,22504,87596],[35,43,5,0,0,0,440070,1051608],[48,43,5,0,1,0,19086,97987],[16,43,0,1,1,0,96922,96922],[52,43,9,1,1,0,61446,68855],[16,43,5,0,0,0,259885,918446],[16,43,5,0,1,0,9153,93644],[16,43,7,1,1,0,97502,97822],[52,43,7,1,1,0,13427,18848],[52,43,3,1,1,0,8417,10178],[52,43,0,1,1,0,12378,14788],[70,43,5,0,1,0,377,40789],[2,43,3,1,1,0,49778,73756],[2,43,1,1,1,0,46129,73377],[2,43,0,1,1,0,78924,93559],[2,43,7,1,1,0,51705,97546],[2,43,5,0,0,0,252234,481364],[2,43,5,0,1,0,10444,45832],[52,43,5,1,1,0,3427,8232],[52,43,6,1,1,0,56644,56644],[52,43,1,1,1,0,8498,13657],[69,43,2,1,1,0,58510,58510],[69,43,0,1,1,0,3922,5120],[69,43,9,1,1,0,23340,28968],[69,43,8,1,1,0,52454,52454],[69,43,4,1,1,0,32624,32624],[29,43,1,1,1,0,9068,10520],[29,43,7,1,1,0,8992,16850],[29,43,2,1,1,0,83074,83074],[69,43,7,1,1,0,3011,9138],[69,43,5,1,1,0,865,2578],[69,43,6,1,1,0,21001,22319],[69,43,1,1,1,0,3359,4704],[29,43,5,1,1,0,4021,8166],[29,43,9,1,1,0,41684,61101],[54,43,0,1,1,0,8459,11283],[54,43,6,1,1,0,83264,83264],[54,43,7,1,1,0,12420,17314],[54,43,3,1,1,0,6956,7210],[54,43,5,1,1,0,3740,6667],[54,43,1,1,1,0,9220,11571],[54,43,9,1,1,0,62047,74312],[29,43,0,1,1,0,9005,14546],[29,43,6,1,1,0,48630,77233],[29,43,3,1,1,0,8963,9979],[53,43,3,1,1,0,4250,4650],[53,43,0,1,1,0,5596,6427],[53,43,9,1,1,0,41438,44764],[53,43,1,1,1,0,5866,7394],[53,43,7,1,1,0,9907,13206],[53,43,6,1,1,0,61002,61002],[53,43,5,1,1,0,1507,4216],[74,43,5,1,1,0,18,1915],[74,43,4,1,1,0,25552,25552],[74,43,2,1,1,0,43380,43380],[74,43,8,1,1,0,98616,98616],[74,43,0,1,1,0,4171,4899],[74,43,6,1,1,0,14412,16998],[74,43,1,1,1,0,1961,4156],[74,43,3,1,1,0,2009,2397],[74,43,7,1,1,0,4973,8025],[113,80,10,1,1,0,12488,12488],[115,80,10,1,1,0,5911,5911],[53,27,5,1,1,0,5707,10747],[53,27,7,1,1,0,11276,22560],[53,27,1,1,1,0,12965,16082],[53,27,0,1,1,0,12056,19654],[53,27,9,1,1,0,68688,73705],[53,27,3,1,1,0,12389,12863],[113,48,0,1,1,0,25447,41517],[113,48,5,0,0,0,29959,37480],[109,48,5,0,1,0,24388,90385],[99,48,5,0,1,0,74961,74961],[85,48,5,0,0,0,227056,320477],[33,48,5,0,1,0,42988,96193],[85,48,5,0,1,0,19420,57316],[56,48,5,0,0,0,3554,509599],[21,48,5,0,0,0,297383,688451],[21,48,5,0,1,0,70522,96254],[32,48,5,0,0,0,252825,749588],[113,48,5,0,1,0,8371,15492],[68,85,9,1,1,0,9146,13353],[112,48,5,0,0,0,233244,233244],[58,48,0,1,1,0,38937,64041],[58,48,5,0,0,0,14387,24920],[58,48,5,0,1,0,5453,19255],[112,48,5,0,1,0,34288,93676],[78,48,5,0,1,0,13583,97412],[78,48,5,0,0,0,308335,437477],[111,48,5,0,1,0,25855,96162],[111,48,5,0,0,0,613294,613294],[101,48,5,0,0,0,319959,1413658],[56,48,5,0,1,0,1008,65014],[32,48,5,0,1,0,26337,91126],[101,48,5,0,1,0,73600,73600],[15,48,5,0,1,0,45286,45840],[68,62,10,1,1,0,2644,2693],[116,85,0,1,1,0,3411,3849],[116,85,5,0,1,0,890,1145],[116,85,3,1,1,0,2666,2952],[84,56,10,1,1,0,12402,16877],[70,56,10,1,1,0,19956,24605],[56,67,5,0,0,0,465728,896957],[78,67,5,0,0,0,446609,946351],[113,67,5,0,0,0,49044,114418],[113,67,0,1,1,0,60298,86246],[113,67,5,0,1,0,8605,26814],[100,67,5,0,1,0,7926,36892],[100,67,5,0,0,0,1152518,1152518],[6,67,5,0,0,0,1070983,1070983],[6,67,5,0,1,0,22019,97621],[84,67,5,0,0,0,480747,585519],[84,67,5,0,1,0,27419,66812],[56,67,5,0,1,0,73535,97815],[78,67,5,0,1,0,22346,90081],[68,108,10,1,1,0,3606,3668],[101,1,10,1,1,0,23217,23217],[16,85,5,0,0,0,640736,1272847],[114,85,5,0,1,0,8320,11133],[114,85,1,1,1,0,13869,18804],[114,85,7,1,1,0,19545,23508],[114,85,0,1,1,0,18523,25381],[114,85,3,1,1,0,11846,13685],[114,85,9,1,1,0,82862,93754],[27,85,5,0,1,0,27314,79798],[107,85,5,0,0,0,647980,647980],[107,85,5,0,1,0,50390,92018],[53,85,0,1,1,0,6872,8653],[53,85,6,1,1,0,77958,77958],[53,85,5,1,1,0,3093,5469],[53,85,1,1,1,0,7474,8173],[53,85,3,1,1,0,5778,6174],[53,85,7,1,1,0,14039,16264],[53,85,9,1,1,0,49977,52578],[26,85,5,0,0,0,1179277,1179277],[100,85,5,0,1,0,40597,97803],[100,85,5,0,0,0,292558,597828],[70,85,5,0,1,0,19412,98151],[70,85,5,0,0,0,5486,1417398],[113,85,0,1,1,0,21206,31994],[113,85,5,0,0,0,13570,27287],[113,85,5,0,1,0,7755,15061],[85,85,0,1,1,0,73571,73571],[85,85,5,0,1,0,7944,40742],[85,85,5,0,0,0,180049,259459],[112,85,5,0,0,0,605085,979147],[112,85,5,0,1,0,34492,96425],[116,85,5,1,1,0,1154,1880],[116,85,1,1,1,0,3520,4977],[116,85,9,1,1,0,24094,30143],[69,85,4,1,1,0,34606,34606],[69,85,5,1,1,0,2589,3485],[69,85,0,1,1,0,5519,5784],[69,85,6,1,1,0,26058,31596],[69,85,7,1,1,0,9754,11508],[69,85,1,1,1,0,5209,6371],[69,85,3,1,1,0,3543,3730],[69,85,9,1,1,0,22508,39315],[17,85,5,0,1,0,29167,89037],[17,85,5,0,0,0,321802,321802],[21,85,5,0,0,0,498180,677763],[21,85,5,0,1,0,26940,90043],[58,85,5,0,1,0,2007,23716],[58,85,5,0,0,0,25637,46237],[58,85,0,1,1,0,61556,95319],[76,85,5,0,1,0,2122,6004],[76,85,9,1,1,0,51753,73582],[76,85,7,1,1,0,12888,17423],[76,85,1,1,1,0,8640,9982],[76,85,6,1,1,0,84758,98369],[76,85,0,1,1,0,9456,11728],[76,85,3,1,1,0,6728,7752],[116,85,6,1,1,0,16097,16097],[51,85,1,1,1,0,9537,11909],[51,85,0,1,1,0,8525,10493],[51,85,5,1,1,0,5538,6618],[51,85,7,1,1,0,12325,16980],[51,85,3,1,1,0,6810,6866],[51,85,6,1,1,0,76762,76762],[51,85,9,1,1,0,60129,61679],[42,85,5,0,0,0,311088,687400],[42,85,5,0,1,0,27825,98563],[56,85,5,0,1,0,1922,82127],[56,85,5,0,0,0,5275,871831],[60,85,5,0,1,0,5137,7214],[60,85,7,1,1,0,11670,11670],[60,85,0,1,1,0,11671,16259],[78,85,5,0,1,0,21825,92801],[78,85,5,0,0,0,280932,438347],[92,85,5,0,0,0,244106,446839],[92,85,3,1,1,0,69656,95545],[92,85,5,0,1,0,27917,64113],[92,85,7,1,1,0,70051,96405],[7,85,5,0,1,0,20875,92026],[7,85,5,0,0,0,376580,686823],[28,85,5,0,1,0,81860,82575],[28,85,5,0,0,0,480579,1447703],[66,85,5,0,0,0,669635,669635],[60,85,5,0,0,0,67209,91409],[60,85,9,1,1,0,57059,57059],[84,85,5,0,0,0,3750,368131],[84,85,5,0,1,0,1078,49157],[6,85,5,0,1,0,12467,98371],[6,85,5,0,0,0,260140,1159181],[18,85,5,0,0,0,450629,450629],[18,85,5,0,1,0,50000,68270],[32,85,5,0,1,0,43511,97611],[32,85,5,0,0,0,319390,1286364],[68,85,7,1,1,0,1396,2332],[68,85,6,1,1,0,6908,8558],[68,85,8,1,1,0,41528,41528],[68,85,5,1,1,0,226,414],[68,85,5,0,1,0,215,225],[68,85,1,1,1,0,937,1415],[68,85,3,1,1,0,705,835],[115,85,7,1,1,0,10458,15335],[115,85,3,1,1,0,5440,5737],[115,85,5,0,1,0,2953,4372],[115,85,1,1,1,0,8514,9489],[115,85,0,1,1,0,8359,10895],[115,85,9,1,1,0,47526,47791],[54,85,1,1,1,0,12315,14109],[54,85,5,1,1,0,6153,8345],[54,85,7,1,1,0,17650,19439],[54,85,3,1,1,0,8902,9725],[54,85,0,1,1,0,11731,13709],[54,85,6,1,1,0,86536,86536],[54,85,9,1,1,0,75022,81670],[73,104,10,1,1,0,15289,15289],[54,9,5,1,1,0,11043,22030],[54,9,1,1,1,0,27969,31273],[54,9,7,1,1,0,25933,35423],[54,9,3,1,1,0,22716,24113],[54,9,0,1,1,0,35159,42402],[53,28,10,1,1,0,6095,7485],[76,70,10,1,1,0,4939,6792],[113,79,5,0,1,0,20664,31291],[113,79,0,1,1,0,71412,87471],[113,79,5,0,0,0,194645,238091],[115,79,5,0,1,0,4703,6337],[115,79,0,1,1,0,8457,14202],[115,79,3,1,1,0,9864,10235],[92,76,10,1,1,0,21457,23994],[105,76,10,1,1,0,24253,31749],[7,76,10,1,1,0,20855,24148],[60,76,10,1,1,0,2801,5338],[61,76,10,1,1,0,24747,30300],[84,76,10,1,1,0,6594,17219],[3,71,5,0,1,0,13987,98677],[3,71,5,0,0,0,271810,773406],[104,71,5,0,0,0,153038,153038],[104,71,5,0,1,0,45091,97650],[68,111,5,0,1,0,679,825],[68,111,3,1,1,0,1837,2802],[68,111,1,1,1,0,2488,3578],[93,71,5,0,1,0,47090,92928],[66,71,5,0,1,0,30756,30756],[68,114,10,1,1,0,1804,1912],[118,63,3,1,1,0,17325,20243],[118,63,0,1,1,0,28761,38489],[118,63,5,1,1,0,5969,14411],[118,63,9,1,1,0,55269,89352],[118,63,7,1,1,0,15148,28750],[118,63,1,1,1,0,15943,21610],[58,11,5,0,0,0,258852,341458],[58,11,5,0,1,0,28303,44072],[19,7,7,1,1,0,12573,17285],[19,7,0,1,1,0,8870,15284],[19,7,9,1,1,0,53394,62552],[19,7,3,1,1,0,10886,14181],[116,91,5,1,1,0,4793,8960],[116,91,5,0,1,0,3533,4726],[116,91,0,1,1,0,12979,23282],[40,7,7,1,1,0,15964,25828],[40,7,1,1,1,0,20284,20923],[40,7,5,0,1,0,6509,13274],[40,7,9,1,1,0,71931,78744],[40,7,0,1,1,0,18842,26289],[40,7,3,1,1,0,15041,15529],[70,7,5,0,0,0,454235,947684],[70,7,5,0,1,0,28812,76075],[58,49,10,1,1,0,11466,12237],[113,49,10,1,1,0,8227,8737],[85,49,10,1,1,0,11446,14321],[49,74,10,1,1,0,9860,15031],[50,74,10,1,1,0,32634,35435],[114,74,10,1,1,0,8909,14923],[30,74,10,1,1,0,34093,43830],[116,91,3,1,1,0,9988,11257],[4,73,5,0,1,0,61157,90425],[68,38,1,1,1,0,3086,3800],[3,74,10,1,1,0,18931,23362],[91,74,10,1,1,0,9758,11164],[52,74,10,1,1,0,5490,6290],[70,74,10,1,1,0,25964,30301],[0,74,10,1,1,0,13853,14164],[113,74,10,1,1,0,8361,12558],[110,74,10,1,1,0,20272,20272],[74,74,10,1,1,0,2735,3330],[77,74,10,1,1,0,27000,29138],[3,45,10,1,1,0,11597,13796],[33,45,10,1,1,0,24135,28471],[98,45,10,1,1,0,36471,38820],[16,45,10,1,1,0,16665,16665],[49,45,10,1,1,0,8848,8849],[110,25,5,0,1,0,27240,46971],[68,107,5,1,1,0,2081,3453],[73,103,5,0,1,0,8416,23820],[58,45,10,1,1,0,9605,10788],[78,45,10,1,1,0,18797,19739],[77,45,10,1,1,0,14588,21562],[112,45,10,1,1,0,17141,22555],[17,45,10,1,1,0,25889,25889],[100,45,10,1,1,0,19189,35973],[70,45,10,1,1,0,9973,23168],[74,95,1,1,1,0,7097,9075],[74,95,5,1,1,0,2447,4249],[74,95,9,1,1,0,34629,46005],[74,95,6,1,1,0,70663,76469],[74,95,7,1,1,0,11131,14322],[91,95,7,1,1,0,20554,28582],[29,95,5,1,1,0,5731,14990],[12,21,7,1,1,0,55602,68698],[88,21,7,1,1,0,65500,87918],[88,21,1,1,1,0,50937,90828],[29,95,3,1,1,0,15502,16335],[29,95,7,1,1,0,15137,25607],[29,95,9,1,1,0,59791,87951],[49,95,5,0,0,0,105002,128673],[49,95,0,1,1,0,25822,31241],[49,95,1,1,1,0,19551,24284],[49,95,9,1,1,0,33387,33387],[49,95,7,1,1,0,26763,30423],[32,60,10,1,1,0,26054,31926],[19,8,10,1,1,0,4664,4664],[40,8,10,1,1,0,10180,12417],[70,8,10,1,1,0,37278,37278],[4,73,5,0,0,0,443248,443248],[49,73,6,1,1,0,98498,98498],[49,73,1,1,1,0,14880,23720],[68,107,5,0,1,0,1594,1889],[68,107,1,1,1,0,6765,7129],[68,107,3,1,1,0,4617,4929],[49,73,7,1,1,0,22973,28589],[49,73,0,1,1,0,19073,24204],[49,73,9,1,1,0,98118,98118],[49,73,5,0,0,0,90195,103227],[49,73,5,0,1,0,8886,13125],[49,73,3,1,1,0,13549,15808],[50,73,5,0,1,0,8456,8456],[2,73,5,0,0,0,309207,1232838],[2,73,5,0,1,0,15420,97681],[16,73,5,0,0,0,399960,824290],[16,73,5,0,1,0,25099,95514],[3,72,10,1,1,0,19557,20980],[3,54,10,1,1,0,3097,11045],[98,54,10,1,1,0,28932,36268],[104,54,10,1,1,0,17952,32863],[68,61,0,1,1,0,3829,4035],[68,101,3,1,1,0,3020,3338],[68,101,0,1,1,0,2854,2886],[107,54,10,1,1,0,18915,33162],[53,54,10,1,1,0,2504,3967],[91,54,10,1,1,0,5568,7155],[100,54,10,1,1,0,11900,31400],[71,54,10,1,1,0,19684,27947],[52,54,10,1,1,0,7220,7478],[103,54,10,1,1,0,12683,35715],[0,54,10,1,1,0,6313,6313],[34,54,10,1,1,0,27952,36869],[32,59,5,0,1,0,13915,96651],[32,59,5,0,0,0,237749,658406],[32,96,10,1,1,0,25254,27044],[68,96,10,1,1,0,934,1281],[60,96,10,1,1,0,7194,9325],[29,96,10,1,1,0,13351,13547],[68,101,5,0,1,0,1268,1362],[68,101,1,1,1,0,4287,4894],[68,101,9,1,1,0,35184,37446],[49,96,10,1,1,0,17653,17653],[30,96,10,1,1,0,43534,53179],[91,96,10,1,1,0,6017,13478],[52,96,10,1,1,0,14024,14984],[110,96,10,1,1,0,21350,21350],[69,96,10,1,1,0,4247,4503],[58,96,10,1,1,0,12978,22593],[74,96,10,1,1,0,3818,3973],[2,41,5,0,0,0,257169,568190],[2,41,7,1,1,0,91635,96393],[2,41,5,0,1,0,24622,74777],[2,41,1,1,1,0,75540,91895],[2,41,3,1,1,0,75077,93668],[16,41,5,0,1,0,26959,94513],[16,41,5,0,0,0,1024049,1163853],[68,101,5,1,1,0,1409,1970],[68,101,7,1,1,0,7016,8502],[116,91,7,1,1,0,15840,23783],[20,41,5,0,1,0,51749,75564],[20,41,5,0,0,0,1162692,1162692],[25,41,5,0,1,0,53073,53073],[64,41,5,0,1,0,25714,57476],[75,41,5,0,1,0,43694,43694],[114,41,5,0,1,0,6555,20498],[114,41,1,1,1,0,24275,29428],[114,41,3,1,1,0,21576,23330],[114,41,9,1,1,0,62078,62078],[114,42,10,1,1,0,18253,19650],[30,42,10,1,1,0,32439,46123],[110,42,10,1,1,0,21496,21496],[69,42,10,1,1,0,5310,6722],[58,42,10,1,1,0,20457,26198],[91,42,10,1,1,0,6832,13171],[116,91,9,1,1,0,64325,97389],[60,42,10,1,1,0,16194,18771],[29,42,10,1,1,0,11935,16829],[68,42,10,1,1,0,1956,2639],[52,120,9,1,1,0,71735,95592],[52,120,1,1,1,0,20666,24580],[52,120,5,1,1,0,11548,19966],[52,120,0,1,1,0,31381,38251],[52,120,3,1,1,0,20816,21164],[113,45,10,1,1,0,5910,7487],[60,45,10,1,1,0,4052,4457],[92,45,10,1,1,0,14909,16904],[105,45,10,1,1,0,23563,35344],[56,45,10,1,1,0,13922,17496],[84,45,10,1,1,0,11566,15678],[97,45,10,1,1,0,38210,39795],[43,45,10,1,1,0,24975,32399],[6,45,10,1,1,0,8336,23854],[32,45,10,1,1,0,18773,22515],[32,50,5,0,1,0,24337,97669],[32,50,5,0,0,0,408212,857261],[78,50,5,0,0,0,313396,414039],[101,35,5,0,0,0,790362,790362],[101,35,5,0,1,0,3950,33616],[73,100,10,1,1,0,20928,20928],[68,101,6,1,1,0,40319,40319],[101,36,5,0,1,0,52182,61103],[85,36,5,0,0,0,221849,283510],[85,36,5,0,1,0,11572,55470],[85,36,0,1,1,0,71010,71010],[112,36,5,0,1,0,26100,93908],[116,91,1,1,1,0,14397,17561],[116,105,0,1,1,0,10562,10965],[116,105,5,1,1,0,3034,3609],[116,105,1,1,1,0,10024,10068],[116,105,3,1,1,0,5179,5179],[116,105,9,1,1,0,71813,71813],[116,105,5,0,1,0,2652,2831],[116,105,7,1,1,0,12381,14171],[116,109,7,1,1,0,16051,20701],[116,109,3,1,1,0,6625,7657],[116,109,5,0,1,0,2777,3482],[116,109,1,1,1,0,10579,13860],[116,109,0,1,1,0,7994,8959],[116,109,9,1,1,0,53829,87191],[116,109,5,1,1,0,3962,5631],[29,76,10,1,1,0,7718,9519],[101,20,5,0,0,0,3626,3626],[110,20,5,0,1,0,42718,92541],[68,61,5,0,1,0,1429,1575],[43,76,10,1,1,0,35053,35645],[6,76,10,1,1,0,10631,29151],[32,76,10,1,1,0,23531,31340],[116,76,10,1,1,0,2141,2279],[69,76,10,1,1,0,2665,3350],[58,76,10,1,1,0,4858,13666],[114,76,10,1,1,0,6892,12810],[3,76,10,1,1,0,11757,17240],[104,76,10,1,1,0,31942,36282],[91,76,10,1,1,0,7940,8303],[100,76,10,1,1,0,38350,38706],[70,76,10,1,1,0,19584,26612],[49,95,5,0,1,0,7017,16727],[49,95,3,1,1,0,17852,17852],[69,95,5,1,1,0,3760,5067],[68,61,7,1,1,0,8591,9749],[68,61,8,1,1,0,82851,82851],[116,38,0,1,1,0,5247,6389],[29,95,0,1,1,0,22493,28216],[29,95,1,1,1,0,16419,22944],[69,95,7,1,1,0,9550,14754],[69,95,1,1,1,0,8418,9041],[69,95,3,1,1,0,5076,5283],[69,95,0,1,1,0,7455,9460],[69,95,9,1,1,0,47022,51838],[52,95,3,1,1,0,13596,14246],[52,95,9,1,1,0,66974,74270],[52,95,0,1,1,0,19308,25035],[52,95,7,1,1,0,21557,25100],[52,95,1,1,1,0,16313,19142],[2,95,7,1,1,0,86224,86224],[58,11,7,1,1,0,47630,94725],[60,11,7,1,1,0,23059,23059],[116,38,5,1,1,0,2480,3055],[116,38,5,0,1,0,1836,2235],[116,38,9,1,1,0,35857,45463],[60,11,5,0,1,0,9062,22679],[60,11,5,0,0,0,135167,169722],[60,11,0,1,1,0,30894,84428],[85,11,5,0,1,0,14769,95575],[85,11,5,0,0,0,376121,613973],[114,11,5,0,1,0,12273,19692],[114,11,1,1,1,0,22509,30878],[114,11,3,1,1,0,20997,22223],[114,11,7,1,1,0,24293,33603],[114,11,0,1,1,0,28609,51025],[68,84,10,1,1,0,2943,3122],[113,54,10,1,1,0,3379,5390],[70,54,10,1,1,0,17497,22543],[108,54,10,1,1,0,14290,26281],[54,54,10,1,1,0,5404,5879],[68,38,7,1,1,0,3376,6669],[73,103,7,1,1,0,32666,38499],[88,21,3,1,1,0,50489,80480],[2,54,10,1,1,0,24143,31806],[16,54,10,1,1,0,17540,27496],[20,54,10,1,1,0,29288,39816],[68,61,3,1,1,0,3603,4047],[64,54,10,1,1,0,32213,33391],[75,54,10,1,1,0,28231,39434],[50,54,10,1,1,0,37026,37816],[114,54,10,1,1,0,6022,6962],[30,54,10,1,1,0,30253,44351],[33,54,10,1,1,0,18387,27076],[112,49,10,1,1,0,24341,25306],[32,49,10,1,1,0,27387,28417],[78,49,10,1,1,0,19984,21065],[101,49,10,1,1,0,28841,30441],[56,49,10,1,1,0,19824,20699],[68,107,7,1,1,0,9948,11334],[65,21,1,1,1,0,4405,6418],[5,95,5,1,1,0,6663,11169],[68,61,6,1,1,0,59181,59181],[68,61,9,1,1,0,39235,41115],[68,61,5,1,1,0,1639,2388],[68,61,1,1,1,0,5822,6748],[113,68,10,1,1,0,12253,13288],[15,50,5,0,1,0,17305,79098],[97,50,5,0,0,0,992987,992987],[97,50,5,0,1,0,48720,84259],[84,50,5,0,1,0,292,51413],[12,21,1,1,1,0,56650,68002],[60,50,0,1,1,0,13081,16131],[60,50,7,1,1,0,13235,13235],[57,21,0,1,1,0,48262,93591],[105,50,5,0,1,0,38782,98834],[111,50,5,0,1,0,66772,96823],[111,50,5,0,0,0,957286,957286],[116,38,1,1,1,0,5982,7675],[116,38,3,1,1,0,3619,3928],[116,38,7,1,1,0,9599,11643],[77,50,0,1,1,0,71398,71398],[77,50,5,0,1,0,23808,68315],[77,50,5,0,0,0,120763,284362],[60,50,5,0,1,0,3741,7195],[60,50,5,0,0,0,69538,88025],[60,50,9,1,1,0,72719,72719],[116,74,10,1,1,0,3200,3200],[69,74,10,1,1,0,2859,3949],[92,74,10,1,1,0,21901,24576],[56,74,10,1,1,0,25507,25507],[60,74,10,1,1,0,5276,7711],[58,74,10,1,1,0,10741,19883],[84,74,10,1,1,0,12665,19962],[29,74,10,1,1,0,10220,12320],[32,74,10,1,1,0,24213,32654],[13,21,5,0,1,0,4850,79836],[94,21,5,0,1,0,10327,43247],[68,43,9,1,1,0,3114,8256],[68,74,10,1,1,0,661,925],[68,86,10,1,1,0,392,484],[115,86,10,1,1,0,4088,4088],[32,86,10,1,1,0,25345,25731],[78,86,10,1,1,0,17039,17844],[52,120,7,1,1,0,27369,32646],[54,120,0,1,1,0,17440,37286],[54,120,5,1,1,0,6907,15251],[54,120,7,1,1,0,18439,29356],[54,120,9,1,1,0,54114,89893],[54,120,1,1,1,0,15575,22496],[54,120,3,1,1,0,16054,20213],[68,112,10,1,1,0,975,1752],[116,106,10,1,1,0,4504,4504],[101,44,5,0,1,0,19546,98080],[116,73,5,1,1,0,1887,2208],[68,41,5,1,1,0,1217,2136],[8,21,5,0,1,0,9586,70397],[68,41,4,1,1,0,85262,85262],[101,44,5,0,0,0,116885,1016210],[56,44,5,0,1,0,947,45112],[56,44,5,0,0,0,3268,410186],[43,44,5,0,0,0,278264,1259605],[43,44,5,0,1,0,35049,98150],[20,73,5,0,1,0,45647,79113],[75,73,5,0,1,0,26895,92516],[114,73,3,1,1,0,16381,18121],[114,73,1,1,1,0,17519,23734],[114,73,0,1,1,0,24414,36214],[114,73,7,1,1,0,22627,30124],[114,73,9,1,1,0,78426,78426],[114,73,5,0,1,0,5772,15747],[30,73,5,0,0,0,423432,788997],[30,73,5,0,1,0,32888,83658],[95,22,10,1,1,0,24812,28378],[37,22,10,1,1,0,26341,31639],[68,73,5,0,1,0,384,451],[33,73,5,0,1,0,58472,90039],[52,73,9,1,1,0,92687,94201],[52,73,7,1,1,0,16585,20670],[52,73,0,1,1,0,13429,17636],[52,73,5,1,1,0,6287,10952],[52,73,3,1,1,0,11078,11943],[101,97,5,0,0,0,349830,349830],[101,97,5,0,1,0,75059,75059],[58,38,5,0,0,0,36186,59440],[58,38,5,0,1,0,7128,16959],[116,38,6,1,1,0,56158,56158],[23,38,5,0,1,0,9922,98027],[23,38,5,0,0,0,516495,1123682],[58,38,7,1,1,0,18861,70001],[58,38,0,1,1,0,23705,57105],[58,38,1,1,1,0,17581,84819],[68,87,5,1,1,0,343,591],[116,85,7,1,1,0,4573,8777],[60,38,5,0,0,0,88147,178675],[54,10,10,1,1,0,11914,16348],[31,21,5,0,1,0,38859,99587],[83,21,5,0,0,0,939930,939930],[80,21,5,0,0,0,460363,1374220],[80,21,5,0,1,0,12619,76501],[38,21,5,0,1,0,10489,96840],[38,21,5,0,0,0,335396,853293],[4,21,5,0,1,0,6879,93630],[4,21,5,0,0,0,334521,1467525],[117,21,5,0,1,0,29935,97297],[117,21,5,0,0,0,1211293,1211293],[1,21,7,1,1,0,93641,96161],[1,21,5,0,0,0,998096,1460291],[1,21,5,0,1,0,4218,84837],[1,21,1,1,1,0,95345,100022],[1,21,3,1,1,0,88460,96895],[68,13,7,1,1,0,11833,17564],[68,13,9,1,1,0,52753,87552],[112,36,5,0,0,0,250998,250998],[101,36,5,0,0,0,693377,693377],[78,36,5,0,0,0,299231,491470],[78,36,5,0,1,0,16786,97483],[116,92,10,1,1,0,6460,12262],[68,13,5,1,1,0,3406,10672],[68,13,5,0,1,0,2767,3189],[68,13,1,1,1,0,12684,28487],[68,13,3,1,1,0,14496,15917],[21,46,5,0,0,0,1321572,1321572],[21,46,5,0,1,0,35667,97339],[86,46,5,0,1,0,18206,98492],[68,41,3,1,1,0,2609,3450],[86,46,5,0,0,0,427235,1160491],[68,78,10,1,1,0,547,590],[102,75,5,0,1,0,29069,98132],[68,85,0,1,1,0,712,805],[116,75,3,1,1,0,2437,3196],[3,75,5,0,0,0,148118,416024],[3,75,0,1,1,0,89048,89048],[3,75,5,0,1,0,6725,74414],[98,75,5,0,1,0,61015,61015],[104,75,5,0,0,0,485487,1462598],[104,75,7,1,1,0,91611,91611],[104,75,5,0,1,0,35840,96251],[107,75,5,0,1,0,28758,28758],[68,107,0,1,1,0,7490,7601],[91,75,7,1,1,0,18076,22081],[91,75,0,1,1,0,13897,16620],[91,75,5,1,1,0,5431,10437],[91,75,1,1,1,0,13599,20576],[91,75,3,1,1,0,10489,10793],[4,41,5,0,1,0,58726,74621],[4,95,5,0,1,0,71482,82274],[114,41,0,1,1,0,30965,51080],[114,41,7,1,1,0,23191,34386],[30,41,5,0,1,0,35971,94033],[99,41,5,0,0,0,426634,426634],[27,41,5,0,1,0,52994,52994],[98,41,5,0,1,0,42057,42057],[104,41,5,0,1,0,37697,66807],[104,41,5,0,0,0,1402529,1402529],[69,41,1,1,1,0,9159,10354],[69,41,7,1,1,0,13103,15614],[69,41,5,1,1,0,4888,6453],[69,41,9,1,1,0,47055,51977],[69,41,3,1,1,0,6464,6693],[69,41,0,1,1,0,7270,12277],[69,41,6,1,1,0,60497,89363],[68,113,5,0,1,0,939,1192],[103,76,10,1,1,0,37388,37388],[0,76,10,1,1,0,11665,13465],[113,76,10,1,1,0,6338,8696],[110,76,10,1,1,0,15030,15030],[85,76,10,1,1,0,10775,14531],[112,76,10,1,1,0,16624,26099],[74,76,10,1,1,0,2032,2369],[77,76,10,1,1,0,21386,24586],[102,76,10,1,1,0,19818,23793],[115,76,10,1,1,0,5658,5658],[73,99,3,1,1,0,23089,23625],[73,99,0,1,1,0,37670,50577],[73,99,7,1,1,0,35131,39253],[73,99,9,1,1,0,41533,41533],[2,95,5,0,1,0,17805,92330],[52,95,5,1,1,0,9215,13106],[16,95,5,0,1,0,18924,98629],[68,113,5,1,1,0,1277,1651],[34,95,5,0,1,0,53001,53001],[16,95,5,0,0,0,835343,835343],[48,95,5,0,0,0,1232405,1232405],[48,95,5,0,1,0,69048,69048],[113,95,5,0,0,0,268277,459955],[108,95,5,0,1,0,25259,83598],[75,95,5,0,1,0,68863,83143],[3,95,5,0,0,0,471748,779381],[3,95,5,0,1,0,27179,94276],[27,95,5,0,1,0,42547,42547],[104,95,5,0,1,0,27457,97677],[104,95,5,0,0,0,375727,375727],[110,54,10,1,1,0,9157,10996],[51,54,10,1,1,0,1544,3154],[42,54,10,1,1,0,11725,23688],[56,54,10,1,1,0,13433,19529],[60,54,10,1,1,0,1773,3953],[85,54,10,1,1,0,7111,9587],[86,54,10,1,1,0,13955,36782],[93,54,10,1,1,0,27869,29447],[112,54,10,1,1,0,10876,19161],[69,54,10,1,1,0,955,1762],[17,54,10,1,1,0,16047,32453],[21,54,10,1,1,0,11294,33198],[96,21,5,0,1,0,2679,98171],[23,54,10,1,1,0,7792,17877],[56,68,10,1,1,0,21189,26356],[84,68,10,1,1,0,13803,13803],[43,53,10,1,1,0,27046,35369],[60,53,10,1,1,0,5751,5950],[84,50,5,0,0,0,1772,402245],[101,50,5,0,0,0,334036,1427679],[101,50,5,0,1,0,35048,78096],[42,50,5,0,0,0,285196,1440154],[42,50,5,0,1,0,11186,97561],[113,50,5,0,0,0,10692,13297],[113,50,0,1,1,0,30180,34715],[17,50,5,0,0,0,370804,714952],[17,50,5,0,1,0,14836,98200],[23,50,5,0,0,0,384847,512322],[23,50,5,0,1,0,22388,85631],[58,50,5,0,0,0,14700,24113],[78,50,5,0,1,0,18544,88211],[112,50,5,0,0,0,396881,1180319],[58,50,5,0,1,0,814,18358],[6,86,10,1,1,0,24604,26842],[60,86,10,1,1,0,4064,4429],[84,86,10,1,1,0,12581,15950],[92,86,10,1,1,0,15741,18248],[7,86,10,1,1,0,16948,19290],[51,86,10,1,1,0,5242,5388],[42,86,10,1,1,0,21301,24827],[56,86,10,1,1,0,19833,20695],[69,86,10,1,1,0,2686,2878],[102,86,10,1,1,0,12157,18985],[76,86,10,1,1,0,4678,5144],[116,86,10,1,1,0,1881,2004],[53,86,10,1,1,0,4225,4492],[63,54,10,1,1,0,8080,31672],[96,21,9,1,1,0,67750,67750],[69,73,1,1,1,1,8418,9159],[69,73,3,1,1,1,6063,6693],[69,73,0,1,1,1,8044,9180],[69,73,5,1,1,1,4189,5062],[69,73,6,1,1,1,76469,76469],[69,73,7,1,1,1,13739,14896],[69,73,9,1,1,1,51082,58923],[69,74,10,1,1,1,4414,4858],[69,85,1,1,1,1,6985,7610],[69,85,3,1,1,1,4403,5083],[69,85,0,1,1,1,6266,6982],[69,85,5,1,1,1,3025,3982],[69,85,7,1,1,1,11605,13387],[69,85,9,1,1,1,4432,41445],[69,86,10,1,1,1,3356,3602],[69,95,1,1,1,1,10101,12294],[69,95,3,1,1,1,6921,7151],[69,95,0,1,1,1,9916,11708],[69,95,5,1,1,1,5103,5946],[69,95,7,1,1,1,15051,15875],[69,95,9,1,1,1,60129,61477],[69,96,10,1,1,1,5388,5784],[69,43,1,1,1,1,4977,6026],[69,43,3,1,1,1,3721,3949],[69,43,0,1,1,1,5559,5863],[69,43,5,1,1,1,2589,2878],[69,43,7,1,1,1,9207,10179],[69,75,1,1,1,1,6870,7469],[69,75,3,1,1,1,5370,5987],[69,75,0,1,1,1,7165,7455],[69,75,5,1,1,1,3681,4272],[69,75,6,1,1,1,32624,32624],[69,75,7,1,1,1,12715,14009],[74,73,1,1,1,1,9075,9770],[74,73,3,1,1,1,4498,5847],[74,73,0,1,1,1,7270,8715],[74,73,5,1,1,1,3400,3643],[74,73,6,1,1,1,58510,58510],[74,73,7,1,1,1,12588,13346],[74,73,9,1,1,1,47659,51813],[74,74,10,1,1,1,3673,3818],[74,85,1,1,1,1,6350,6744],[74,85,3,1,1,1,3543,4286],[74,85,0,1,1,1,5322,5905],[74,85,5,1,1,1,2614,2984],[74,85,7,1,1,1,10137,10841],[74,85,9,1,1,1,32297,32297],[74,95,1,1,1,1,9833,11190],[74,95,3,1,1,1,6859,6956],[74,95,0,1,1,1,9439,11654],[74,95,5,1,1,1,4125,4916],[74,95,7,1,1,1,14429,14786],[74,95,9,1,1,1,56312,56312],[74,96,10,1,1,1,4372,4426],[74,43,1,1,1,1,5026,5714],[74,43,3,1,1,1,2745,3250],[74,43,4,1,1,1,34606,34606],[74,43,0,1,1,1,5117,5308],[74,43,5,1,1,1,1334,2093],[74,43,7,1,1,1,6189,8391],[74,54,10,1,1,1,1876,2009],[74,75,1,1,1,1,7675,8802],[74,75,3,1,1,1,4956,5139],[74,75,0,1,1,1,5964,6621],[74,75,5,1,1,1,2437,3066],[74,75,6,1,1,1,28924,38835],[74,75,7,1,1,1,10518,11131],[74,76,10,1,1,1,2735,2735],[91,41,1,1,1,1,26516,36578],[91,41,3,1,1,1,24117,24658],[91,41,0,1,1,1,41522,55063],[91,41,5,1,1,1,18231,24031],[91,41,7,1,1,1,32576,37596],[91,42,10,1,1,1,17099,18606],[91,73,1,1,1,1,24010,30290],[91,73,3,1,1,1,16653,18239],[91,73,0,1,1,1,28636,33496],[91,73,5,1,1,1,13529,16048],[91,73,7,1,1,1,26496,29106],[91,73,9,1,1,1,82434,94275],[91,74,10,1,1,1,12874,13853],[91,95,1,1,1,1,25455,36379],[91,95,3,1,1,1,19332,20910],[91,95,0,1,1,1,28479,45077],[91,95,5,1,1,1,16362,19283],[91,95,7,1,1,1,29759,33988],[91,96,10,1,1,1,16428,16428],[91,43,1,1,1,1,13599,19598],[91,43,3,1,1,1,11614,13314],[91,43,0,1,1,1,14546,17881],[91,43,5,1,1,1,8458,10448],[91,43,7,1,1,1,20598,22081],[91,54,10,1,1,1,7852,8254],[91,75,1,1,1,1,20661,22001],[91,75,3,1,1,1,13420,16083],[91,75,0,1,1,1,24726,28026],[91,75,5,1,1,1,8525,13013],[91,75,7,1,1,1,22142,26305],[91,76,10,1,1,1,10468,10489],[49,73,5,0,0,1,165127,180307],[49,73,5,0,1,1,13549,20374],[49,73,1,1,1,1,27973,30922],[49,73,3,1,1,1,22672,24321],[49,73,0,1,1,1,38159,46836],[49,73,7,1,1,1,29562,31419],[49,74,10,1,1,1,17845,17845],[49,95,5,0,0,1,185123,201088],[49,95,5,0,1,1,17852,23845],[49,95,1,1,1,1,32725,38750],[49,95,3,1,1,1,26495,26495],[49,95,0,1,1,1,60059,62976],[49,95,7,1,1,1,32430,36071],[49,96,10,1,1,1,19976,19976],[49,81,5,0,0,1,243860,246256],[49,81,5,0,1,1,20047,28839],[49,81,1,1,1,1,41551,42877],[49,81,3,1,1,1,29698,30371],[49,81,0,1,1,1,64722,69328],[49,81,7,1,1,1,32589,40473],[49,82,10,1,1,1,27261,29256],[49,40,5,0,0,1,236486,249043],[49,40,5,0,1,1,17050,26575],[49,40,1,1,1,1,37486,42063],[49,40,3,1,1,1,30111,30679],[49,40,0,1,1,1,76699,77642],[49,40,7,1,1,1,36789,40760],[49,44,5,0,0,1,89808,103227],[49,44,5,0,1,1,8364,12047],[49,44,1,1,1,1,20502,23266],[49,44,3,1,1,1,14920,15808],[49,44,0,1,1,1,26050,35024],[49,44,7,1,1,1,23165,23456],[49,44,9,1,1,1,71235,71235],[49,45,10,1,1,1,11325,11325],[2,41,5,0,0,1,728150,728150],[2,41,5,0,1,1,89573,89573],[2,43,5,0,0,1,603475,637726],[2,43,5,0,1,1,58269,93026],[2,54,10,1,1,1,38707,40531],[3,72,10,1,1,1,25565,28750],[3,73,5,0,0,1,1064929,1278866],[3,73,5,0,1,1,58461,58461],[3,74,10,1,1,1,27000,27000],[3,43,5,0,1,1,27306,34898],[3,54,10,1,1,1,12134,14526],[3,75,5,0,0,1,440297,706921],[3,75,5,0,1,1,76987,98775],[3,76,10,1,1,1,17748,20980],[3,44,5,0,1,1,28919,40093],[3,45,10,1,1,1,16569,16569],[3,57,5,0,0,1,372252,379148],[3,57,5,0,1,1,40800,87053],[3,58,10,1,1,1,16792,18237],[6,73,5,0,0,1,932273,932273],[6,85,5,0,0,1,1165672,1203144],[6,86,10,1,1,1,27452,28921],[6,43,5,0,0,1,369967,494962],[6,43,5,0,1,1,75359,97587],[6,54,10,1,1,1,24529,25756],[6,76,10,1,1,1,29301,31855],[6,55,5,0,0,1,798440,1051825],[6,44,5,0,0,1,553869,613603],[6,44,5,0,1,1,67562,95907],[6,52,5,0,0,1,869814,869814],[7,85,5,0,0,1,720497,1036375],[7,85,5,0,1,1,93326,97728],[7,86,10,1,1,1,20855,25324],[7,43,5,0,0,1,354047,439993],[7,43,5,0,1,1,57108,98333],[7,54,10,1,1,1,19028,20695],[7,76,10,1,1,1,27575,31672],[16,43,5,0,0,1,1303633,1352702],[16,43,5,0,1,1,93979,97827],[16,54,10,1,1,1,27952,27952],[16,45,10,1,1,1,36829,36829],[9,21,5,0,0,1,618796,1091241],[9,21,5,0,1,1,48803,86499],[9,22,10,1,1,1,19278,19278],[17,43,5,0,0,1,1068043,1068043],[17,54,10,1,1,1,34301,41465],[17,44,5,0,1,1,80861,92971],[10,21,5,0,0,1,1164719,1250062],[10,21,5,0,1,1,54779,100281],[10,22,10,1,1,1,16423,16423],[18,43,5,0,0,1,1059726,1059726],[18,54,10,1,1,1,41436,42490],[12,21,5,0,0,1,974487,1350676],[12,21,5,0,1,1,55375,80546],[12,21,1,1,1,1,85106,98252],[12,21,3,1,1,1,86115,90887],[12,22,10,1,1,1,23730,23730],[13,21,5,0,1,1,79838,100381],[13,22,10,1,1,1,25072,25072],[20,54,10,1,1,1,52402,53525],[21,54,10,1,1,1,34040,38778],[21,47,10,1,1,1,39114,39114],[22,21,5,0,0,1,1457508,1457508],[22,21,5,0,1,1,63422,100384],[22,22,10,1,1,1,21652,25134],[23,43,5,0,0,1,247730,1003214],[23,43,5,0,1,1,48864,93293],[23,54,10,1,1,1,32699,32846],[23,50,5,0,0,1,649077,923860],[23,50,5,0,1,1,95749,95749],[23,51,10,1,1,1,29867,29867],[26,43,5,0,1,1,72376,72376],[28,43,5,0,0,1,754610,785813],[28,44,5,0,0,1,1023238,1447703],[32,60,10,1,1,1,40588,40588],[32,74,10,1,1,1,33861,35743],[32,86,10,1,1,1,31011,32534],[32,96,10,1,1,1,38479,38479],[32,43,5,0,0,1,406123,583837],[32,43,5,0,1,1,27991,97368],[32,54,10,1,1,1,23780,25731],[32,76,10,1,1,1,32654,32654],[32,48,5,0,0,1,1048742,1048742],[32,49,10,1,1,1,34123,34123],[32,44,5,0,0,1,629914,1108110],[32,44,5,0,1,1,80877,98515],[32,45,10,1,1,1,18182,25960],[32,51,10,1,1,1,29072,33641],[33,43,5,0,1,1,84177,84177],[33,54,10,1,1,1,28471,29447],[33,45,10,1,1,1,33649,33649],[34,54,10,1,1,1,37931,37931],[36,54,10,1,1,1,36319,41511],[42,86,10,1,1,1,30790,32399],[42,43,5,0,0,1,444440,926057],[42,43,5,0,1,1,69917,97729],[42,54,10,1,1,1,23978,30152],[42,76,10,1,1,1,35645,40433],[42,51,10,1,1,1,33134,33162],[43,54,10,1,1,1,32035,32035],[43,76,10,1,1,1,43298,44741],[43,45,10,1,1,1,32586,34894],[43,53,10,1,1,1,37760,39212],[50,74,10,1,1,1,50186,50186],[50,54,10,1,1,1,41702,43337],[46,21,5,0,0,1,1214383,1232800],[46,21,5,0,1,1,64074,79836],[46,21,7,1,1,1,100080,100080],[46,22,10,1,1,1,23916,23916],[47,21,5,0,0,1,365829,476992],[47,21,5,0,1,1,15251,22661],[47,22,10,1,1,1,7602,9457],[56,74,10,1,1,1,25964,25964],[56,85,5,0,1,1,84714,97737],[56,86,10,1,1,1,15168,21821],[56,43,5,0,0,1,507013,878724],[56,43,5,0,1,1,41689,75959],[56,54,10,1,1,1,19550,20957],[56,76,10,1,1,1,23371,25507],[56,81,5,0,1,1,80818,96801],[56,82,10,1,1,1,44004,45844],[56,48,5,0,0,1,512990,973615],[56,48,5,0,1,1,65036,94932],[68,41,7,1,1,1,8899,9887],[56,49,10,1,1,1,25338,26785],[56,68,10,1,1,1,30962,36585],[56,44,5,0,0,1,476957,818107],[56,44,5,0,1,1,47848,83844],[58,41,5,0,0,1,767121,767121],[58,41,5,0,1,1,74153,92831],[58,42,10,1,1,1,28760,28760],[58,73,5,0,0,1,188082,368771],[58,73,5,0,1,1,35855,51869],[58,73,7,1,1,1,90893,95088],[58,74,10,1,1,1,20147,20310],[58,85,5,0,0,1,47114,47114],[58,85,5,0,1,1,23725,37373],[58,86,10,1,1,1,11699,12872],[58,95,5,0,0,1,301926,1169711],[58,95,5,0,1,1,39917,62361],[58,96,10,1,1,1,24548,25022],[58,38,5,0,0,1,59973,59973],[58,38,5,0,1,1,17108,17826],[58,38,7,1,1,1,71073,94523],[58,39,10,1,1,1,16718,16718],[58,43,5,0,1,1,11132,15815],[58,43,0,1,1,1,66431,95585],[58,54,10,1,1,1,9362,9365],[58,75,5,0,0,1,57097,57097],[58,75,5,0,1,1,25751,51265],[58,76,10,1,1,1,14075,16352],[58,25,5,0,1,1,38102,46971],[58,25,7,1,1,1,92631,92631],[58,81,5,0,0,1,1141124,1141124],[58,81,5,0,1,1,79322,98639],[58,82,10,1,1,1,28761,43606],[58,7,5,0,0,1,1299159,1299159],[58,7,5,0,1,1,79558,90581],[68,41,9,1,1,1,35184,35857],[58,11,5,0,0,1,609830,1066559],[58,11,5,0,1,1,54612,97549],[58,12,10,1,1,1,23917,23917],[58,48,5,0,1,1,19668,24530],[58,44,5,0,1,1,12620,16460],[58,45,10,1,1,1,11304,12558],[58,50,5,0,1,1,16133,23637],[58,51,10,1,1,1,12978,13364],[60,41,5,0,0,1,313640,357605],[60,41,5,0,1,1,29707,67112],[60,41,7,1,1,1,67604,67604],[60,73,5,0,0,1,193095,244247],[60,73,5,0,1,1,15790,23064],[60,73,0,1,1,1,84428,98537],[60,73,7,1,1,1,23137,23137],[60,74,10,1,1,1,8361,8361],[60,85,5,0,0,1,92665,122974],[60,85,5,0,1,1,6198,8543],[60,85,0,1,1,1,16828,22106],[60,85,9,1,1,1,68505,68505],[60,86,10,1,1,1,5200,5200],[60,95,5,0,0,1,250224,298841],[60,95,5,0,1,1,26828,43698],[60,95,7,1,1,1,44275,44275],[60,38,5,0,0,1,215492,219420],[60,38,5,0,1,1,29726,51177],[60,38,7,1,1,1,52166,52166],[60,39,10,1,1,1,14634,14634],[60,43,5,0,0,1,65113,75666],[60,43,5,0,1,1,4406,5906],[60,43,0,1,1,1,11800,14437],[60,43,7,1,1,1,10257,10257],[60,43,9,1,1,1,57059,57059],[60,75,5,0,0,1,123640,131150],[60,75,5,0,1,1,5616,15730],[60,75,0,1,1,1,31393,83133],[60,75,7,1,1,1,16195,16195],[60,75,9,1,1,1,80281,80281],[60,76,10,1,1,1,6338,6713],[60,25,5,0,0,1,171526,171526],[60,25,5,0,1,1,24943,31353],[60,25,7,1,1,1,35739,35739],[60,11,5,0,0,1,177778,206536],[60,11,5,0,1,1,23483,34832],[60,11,7,1,1,1,35729,35729],[60,12,10,1,1,1,8705,8705],[60,44,5,0,0,1,69270,74259],[60,44,5,0,1,1,5974,6721],[60,44,0,1,1,1,14861,19175],[60,44,9,1,1,1,53304,53304],[60,50,5,0,0,1,90355,104953],[60,50,5,0,1,1,7291,9170],[60,50,0,1,1,1,20853,29655],[60,50,9,1,1,1,74773,74773],[60,57,5,0,0,1,135167,151484],[60,57,5,0,1,1,10407,15047],[60,57,0,1,1,1,31627,62545],[60,57,7,1,1,1,15227,15227],[60,58,10,1,1,1,7711,7711],[60,52,5,0,0,1,110210,133280],[60,52,5,0,1,1,9280,11759],[60,52,0,1,1,1,22910,33719],[61,73,5,0,0,1,1140445,1140445],[61,43,5,0,0,1,514871,569407],[61,43,5,0,1,1,94029,98815],[61,54,10,1,1,1,23287,23287],[61,76,10,1,1,1,43427,45244],[63,54,10,1,1,1,37465,45157],[64,54,10,1,1,1,46123,46123],[70,74,10,1,1,1,33029,33029],[70,86,10,1,1,1,27400,30810],[70,43,5,0,0,1,481617,959597],[70,43,5,0,1,1,42204,68240],[70,43,7,1,1,1,73751,94362],[70,54,10,1,1,1,23362,27869],[70,76,10,1,1,1,28375,31892],[70,23,5,0,0,1,979174,979174],[70,23,5,0,1,1,56332,67032],[70,8,10,1,1,1,39281,39281],[70,56,10,1,1,1,27774,27774],[70,44,5,0,0,1,565495,937374],[70,44,5,0,1,1,52916,78297],[70,44,7,1,1,1,84789,84789],[70,45,10,1,1,1,26630,26630],[75,54,10,1,1,1,41294,43654],[77,74,10,1,1,1,34205,34205],[77,85,5,0,0,1,616028,673763],[77,85,5,0,1,1,91560,98858],[77,86,10,1,1,1,27549,28301],[77,43,5,0,1,1,50180,64396],[77,54,10,1,1,1,19684,20689],[77,75,5,0,0,1,489763,489763],[77,75,5,0,1,1,90547,95052],[77,76,10,1,1,1,32562,32562],[77,44,5,0,1,1,57574,69104],[77,45,10,1,1,1,24821,24821],[77,50,5,0,0,1,328643,340280],[77,50,5,0,1,1,68574,80131],[78,41,5,0,0,1,1371205,1404191],[78,73,5,0,1,1,52605,52605],[78,85,5,0,0,1,444983,583783],[78,85,5,0,1,1,92879,92879],[78,86,10,1,1,1,19391,19893],[78,95,5,0,0,1,787183,787183],[78,43,5,0,0,1,381580,485598],[78,43,5,0,1,1,51053,98619],[78,54,10,1,1,1,18248,19226],[78,75,5,0,0,1,632625,668094],[78,76,10,1,1,1,22420,23642],[78,36,5,0,0,1,619742,822952],[113,41,5,0,0,1,1060043,1084537],[113,41,5,0,1,1,86180,92683],[113,73,5,0,0,1,374976,509492],[113,73,5,0,1,1,48547,97199],[113,74,10,1,1,1,14276,18290],[113,85,5,0,1,1,10844,18907],[113,85,0,1,1,1,35534,75382],[113,95,5,0,0,1,510485,798599],[113,95,5,0,1,1,74323,98407],[113,43,5,0,1,1,8572,10499],[113,43,0,1,1,1,21070,29476],[113,54,10,1,1,1,5581,5961],[113,75,5,0,0,1,188249,246974],[113,75,5,0,1,1,19698,28605],[113,75,0,1,1,1,83408,95507],[113,76,10,1,1,1,9260,9260],[113,79,5,0,0,1,268768,397353],[113,79,5,0,1,1,34852,59496],[113,80,10,1,1,1,15203,15203],[113,81,5,0,0,1,682651,769697],[113,81,5,0,1,1,72343,98693],[113,82,10,1,1,1,32462,32462],[113,48,5,0,1,1,13595,22014],[113,48,0,1,1,1,48342,48342],[113,49,10,1,1,1,9014,9014],[113,67,5,0,0,1,137101,137101],[113,67,5,0,1,1,27027,41110],[113,68,10,1,1,1,11443,11443],[113,44,5,0,1,1,11843,14988],[113,44,0,1,1,1,33328,75848],[113,45,10,1,1,1,7742,7742],[113,50,5,0,1,1,15062,18299],[113,50,0,1,1,1,35787,79979],[113,51,10,1,1,1,7851,8227],[113,57,5,0,0,1,182210,198932],[113,57,5,0,1,1,20235,29610],[113,32,5,0,1,1,21540,27838],[113,33,10,1,1,1,9498,10035],[14,22,10,1,1,1,34688,34688],[38,22,10,1,1,1,26078,26756],[88,21,5,0,1,1,60042,92031],[88,22,10,1,1,1,40746,42506],[4,43,5,0,0,1,1222506,1222506],[4,22,10,1,1,1,25457,25457],[94,21,5,0,1,1,46489,75950],[94,22,10,1,1,1,20066,20066],[110,42,10,1,1,1,34571,34571],[110,73,5,0,0,1,525223,525223],[110,73,5,0,1,1,74529,74529],[110,96,10,1,1,1,24747,24747],[110,43,5,0,0,1,189197,312512],[110,43,5,0,1,1,11571,44651],[110,43,0,1,1,1,78290,96162],[110,54,10,1,1,1,12110,12110],[110,75,5,0,0,1,350632,462493],[110,75,5,0,1,1,41592,93475],[110,25,5,0,0,1,400490,454027],[110,25,5,0,1,1,47200,93820],[110,26,10,1,1,1,30766,30766],[110,57,5,0,0,1,389986,657371],[110,57,5,0,1,1,47285,96234],[110,118,5,0,0,1,1038252,1038252],[110,119,10,1,1,1,32783,32783],[71,43,5,0,0,1,949618,1173110],[71,54,10,1,1,1,27616,31428],[71,21,5,0,1,1,62774,98807],[101,54,10,1,1,1,28408,33441],[101,49,10,1,1,1,34474,35058],[101,51,10,1,1,1,33707,34039],[101,98,10,1,1,1,42593,42593],[101,1,10,1,1,1,45840,45840],[101,122,10,1,1,1,40118,40118],[101,33,10,1,1,1,35670,36739],[101,116,10,1,1,1,37296,37296],[19,7,5,0,1,1,9779,12595],[19,7,1,1,1,1,24623,25808],[19,7,3,1,1,1,15917,19889],[19,7,0,1,1,1,18842,35829],[19,7,7,1,1,1,19135,21603],[68,41,5,0,1,1,1217,1230],[68,41,1,1,1,1,6239,7129],[68,41,3,1,1,1,3540,4918],[68,41,0,1,1,1,3599,3843],[68,41,5,1,1,1,1952,2537],[68,41,6,1,1,1,53182,59181],[68,42,10,1,1,1,2436,2663],[68,73,5,0,1,1,496,550],[68,73,1,1,1,1,2374,2740],[68,73,2,1,1,1,63435,63435],[68,73,3,1,1,1,1564,1938],[68,73,4,1,1,1,41739,41739],[68,73,0,1,1,1,1668,2001],[68,73,5,1,1,1,733,823],[68,73,6,1,1,1,17812,22214],[68,73,7,1,1,1,4279,5025],[68,73,9,1,1,1,23641,26494],[68,85,5,0,1,1,254,281],[68,85,1,1,1,1,1565,1754],[68,85,3,1,1,1,985,1306],[68,85,5,1,1,1,417,469],[68,85,7,1,1,1,2449,2912],[68,85,9,1,1,1,13591,13591],[68,95,5,0,1,1,693,828],[68,95,1,1,1,1,3069,3800],[68,95,4,1,1,1,48356,48356],[68,95,0,1,1,1,2381,2411],[68,95,5,1,1,1,835,1185],[68,95,6,1,1,1,45334,45334],[68,95,7,1,1,1,5517,6088],[68,95,9,1,1,1,26894,29005],[68,38,5,0,1,1,1133,1204],[68,38,1,1,1,1,3862,4712],[68,38,3,1,1,1,2757,3417],[68,38,0,1,1,1,2668,2696],[68,38,5,1,1,1,1409,1603],[68,38,7,1,1,1,6724,7093],[68,38,9,1,1,1,33696,33696],[68,39,10,1,1,1,1752,1752],[68,43,5,0,1,1,70,78],[68,43,1,1,1,1,937,1046],[68,43,3,1,1,1,705,784],[68,43,0,1,1,1,335,335],[68,43,5,1,1,1,212,238],[68,43,6,1,1,1,7632,7632],[68,43,7,1,1,1,1385,1705],[68,43,8,1,1,1,42748,42748],[68,113,5,0,1,1,1268,1310],[68,113,1,1,1,1,4868,5579],[68,113,3,1,1,1,3434,3568],[68,113,0,1,1,1,3309,3409],[68,113,5,1,1,1,1662,1970],[68,113,6,1,1,1,73848,73848],[68,113,7,1,1,1,8263,8377],[68,113,9,1,1,1,40729,45901],[68,114,10,1,1,1,1956,1956],[68,101,5,0,1,1,1416,1422],[68,101,1,1,1,1,5805,5888],[68,101,3,1,1,1,3938,5027],[68,101,5,1,1,1,1977,2104],[68,101,6,1,1,1,84758,84758],[68,101,7,1,1,1,8506,9330],[68,101,9,1,1,1,39235,39235],[68,111,1,1,1,1,4590,5149],[68,111,3,1,1,1,3027,3216],[68,111,0,1,1,1,2759,2765],[68,111,5,1,1,1,1387,1628],[68,111,7,1,1,1,7643,8132],[68,112,10,1,1,1,1871,1886],[68,21,5,0,1,1,2486,2486],[68,21,1,1,1,1,7444,8498],[68,21,3,1,1,1,6489,8197],[68,21,0,1,1,1,6161,8701],[68,21,5,1,1,1,3432,5270],[68,21,7,1,1,1,12118,13366],[68,21,9,1,1,1,52578,52578],[68,22,10,1,1,1,4722,4722],[68,61,5,0,1,1,1594,1771],[68,61,1,1,1,1,7412,8462],[68,61,3,1,1,1,5272,5532],[68,61,0,1,1,1,4151,4151],[68,61,5,1,1,1,2546,2809],[68,61,6,1,1,1,82851,82851],[68,61,7,1,1,1,9948,10514],[68,61,9,1,1,1,50171,54107],[68,62,10,1,1,1,3059,3059],[68,83,5,0,1,1,1690,1833],[68,83,1,1,1,1,7225,8369],[68,83,3,1,1,1,4617,6362],[68,83,0,1,1,1,4559,4559],[68,83,5,1,1,1,2908,3471],[68,83,6,1,1,1,77233,77233],[68,83,7,1,1,1,10773,11319],[68,83,9,1,1,1,49328,51977],[68,84,10,1,1,1,3606,3606],[68,13,5,0,1,1,5435,5435],[68,13,1,1,1,1,28624,41254],[68,13,3,1,1,1,27513,33827],[68,13,5,1,1,1,10906,17418],[68,13,7,1,1,1,22192,29801],[68,77,5,0,1,1,242,250],[68,77,1,1,1,1,1586,1789],[68,77,3,1,1,1,989,1313],[68,77,0,1,1,1,1216,1263],[68,77,5,1,1,1,447,535],[68,77,6,1,1,1,13564,13564],[68,77,7,1,1,1,2402,2873],[68,77,9,1,1,1,16483,16483],[68,87,5,0,1,1,409,409],[68,87,1,1,1,1,1944,2373],[68,87,3,1,1,1,1370,1383],[68,87,0,1,1,1,1463,1536],[68,87,5,1,1,1,595,672],[68,87,7,1,1,1,3147,3771],[68,107,5,0,1,1,1954,2089],[68,107,1,1,1,1,9863,11376],[68,107,3,1,1,1,5835,6311],[68,107,0,1,1,1,8157,8208],[68,107,5,1,1,1,3240,4022],[68,107,7,1,1,1,11769,12420],[68,107,9,1,1,1,48526,84943],[68,108,10,1,1,1,4667,4667],[76,85,5,0,1,1,5039,7600],[76,85,1,1,1,1,12137,18091],[76,85,3,1,1,1,8954,10439],[76,85,0,1,1,1,14978,19410],[76,85,7,1,1,1,17764,20467],[76,85,9,1,1,1,74569,79136],[76,86,10,1,1,1,5338,5568],[76,43,5,0,1,1,3788,4946],[76,43,1,1,1,1,8919,14267],[76,43,3,1,1,1,7608,8703],[76,43,0,1,1,1,11277,12761],[76,43,7,1,1,1,15059,16324],[76,43,9,1,1,1,55565,55565],[76,54,10,1,1,1,4681,4681],[76,69,5,0,1,1,5927,10343],[116,85,7,1,1,1,8932,8932],[76,69,1,1,1,1,16290,21714],[76,69,3,1,1,1,11691,14661],[76,69,0,1,1,1,19477,26394],[76,69,7,1,1,1,21159,24274],[76,69,9,1,1,1,85935,85935],[76,70,10,1,1,1,8609,8609],[114,41,5,0,1,1,22442,29645],[114,41,1,1,1,1,32923,40753],[114,41,3,1,1,1,30520,32109],[114,41,0,1,1,1,60342,73992],[114,41,7,1,1,1,36104,43565],[114,42,10,1,1,1,22714,24214],[114,73,5,0,1,1,16342,22998],[114,73,1,1,1,1,28651,36969],[114,73,3,1,1,1,23388,26907],[114,73,0,1,1,1,52832,67796],[114,73,7,1,1,1,33003,34952],[114,74,10,1,1,1,19650,19768],[114,85,5,0,1,1,11875,15631],[114,85,1,1,1,1,22243,26018],[114,85,3,1,1,1,16212,17874],[114,85,0,1,1,1,30945,39307],[114,85,7,1,1,1,23607,29591],[114,85,9,1,1,1,95868,95868],[114,86,10,1,1,1,13954,15920],[114,43,5,0,1,1,8265,10776],[114,43,1,1,1,1,13869,20755],[114,43,3,1,1,1,11846,15069],[114,43,0,1,1,1,21524,32008],[114,43,7,1,1,1,19545,23508],[114,54,10,1,1,1,8980,12810],[114,75,5,0,1,1,13324,19126],[114,75,1,1,1,1,27721,33594],[114,75,3,1,1,1,19389,22987],[114,75,0,1,1,1,32015,52847],[114,75,7,1,1,1,26216,32915],[114,76,10,1,1,1,14923,16228],[114,11,5,0,1,1,20315,27556],[114,11,1,1,1,1,35421,42282],[114,11,3,1,1,1,27732,30568],[114,11,0,1,1,1,73873,84278],[114,11,7,1,1,1,35254,45601],[116,73,1,1,1,1,8588,8640],[116,73,3,1,1,1,4250,4250],[116,73,0,1,1,1,5475,6087],[116,73,5,1,1,1,2218,2737],[116,73,7,1,1,1,9675,11461],[116,74,10,1,1,1,3501,3501],[116,85,5,0,1,1,1487,1542],[116,85,1,1,1,1,5009,5920],[116,85,3,1,1,1,3174,3214],[116,85,0,1,1,1,3890,5247],[116,85,5,1,1,1,1788,2141],[116,85,9,1,1,1,36221,39526],[116,38,5,0,1,1,2262,2545],[116,38,1,1,1,1,8828,9183],[116,38,3,1,1,1,5000,5000],[116,38,0,1,1,1,6425,7994],[116,38,5,1,1,1,3094,3546],[116,38,7,1,1,1,11809,14171],[116,38,9,1,1,1,46952,46952],[116,43,5,0,1,1,912,980],[116,43,1,1,1,1,3520,4038],[116,43,3,1,1,1,2666,2666],[116,43,0,1,1,1,3365,3849],[116,43,5,1,1,1,1187,1499],[116,43,6,1,1,1,18655,18655],[116,43,7,1,1,1,5093,6232],[116,43,9,1,1,1,30143,31216],[116,75,5,0,1,1,1459,1570],[116,75,1,1,1,1,5930,6424],[116,75,3,1,1,1,3425,4028],[116,75,0,1,1,1,4705,5298],[116,75,5,1,1,1,2127,2270],[116,75,6,1,1,1,25552,25552],[116,75,7,1,1,1,9536,9941],[116,75,9,1,1,1,52389,54370],[116,76,10,1,1,1,2369,2369],[116,91,5,0,1,1,4799,5256],[116,91,1,1,1,1,23290,33495],[116,91,3,1,1,1,15444,20934],[116,91,0,1,1,1,27346,43784],[116,91,5,1,1,1,8990,13248],[116,91,7,1,1,1,24310,28929],[116,92,10,1,1,1,13865,14397],[116,105,1,1,1,1,10579,13020],[116,105,3,1,1,1,7375,7375],[116,105,0,1,1,1,13709,13709],[116,105,5,1,1,1,3875,3998],[116,105,7,1,1,1,14721,15809],[116,106,10,1,1,1,5675,5675],[116,109,5,0,1,1,3962,4098],[116,109,1,1,1,1,14114,16313],[116,109,3,1,1,1,9230,9230],[116,109,0,1,1,1,10833,14363],[116,109,5,1,1,1,4436,6619],[116,109,7,1,1,1,20732,21337],[116,110,10,1,1,1,6460,6460],[116,29,5,0,1,1,2962,3331],[116,29,1,1,1,1,10445,13623],[116,29,3,1,1,1,8417,8548],[116,29,0,1,1,1,9660,10895],[116,29,5,1,1,1,4494,5045],[116,29,7,1,1,1,15840,17374],[116,30,10,1,1,1,6660,7001],[116,89,5,0,1,1,1965,1965],[116,89,1,1,1,1,7728,8173],[116,89,3,1,1,1,5179,5525],[116,89,0,1,1,1,6389,7601],[116,89,5,1,1,1,2651,2992],[116,89,7,1,1,1,12382,14065],[116,90,10,1,1,1,3554,3554],[115,85,5,0,1,1,4803,6509],[115,85,1,1,1,1,14048,17759],[115,85,3,1,1,1,7074,9725],[115,85,0,1,1,1,12263,14720],[115,85,7,1,1,1,15336,17791],[115,85,9,1,1,1,62047,62047],[115,86,10,1,1,1,7496,7496],[115,43,5,0,1,1,2953,5006],[115,43,1,1,1,1,9489,11246],[115,43,3,1,1,1,5530,8168],[115,43,0,1,1,1,9590,10408],[115,43,7,1,1,1,12807,15526],[115,43,9,1,1,1,56641,56641],[115,54,10,1,1,1,4891,4891],[115,75,5,0,1,1,5153,6729],[115,75,1,1,1,1,17353,18570],[115,75,3,1,1,1,10235,10235],[115,75,0,1,1,1,18113,18302],[115,75,7,1,1,1,16147,18038],[115,76,10,1,1,1,5855,5855],[115,79,5,0,1,1,6761,9567],[115,79,1,1,1,1,20380,20856],[115,79,3,1,1,1,11665,13362],[115,79,0,1,1,1,18738,24204],[115,79,7,1,1,1,19749,22216],[115,79,9,1,1,1,73294,73739],[40,7,5,0,1,1,15041,20296],[40,7,1,1,1,1,24079,28744],[40,7,3,1,1,1,21454,22275],[40,7,0,1,1,1,39412,44121],[40,7,7,1,1,1,27170,31862],[40,8,10,1,1,1,13733,17325],[118,63,1,1,1,1,26103,33734],[118,63,3,1,1,1,26068,30264],[118,63,0,1,1,1,46363,52081],[118,63,5,1,1,1,15272,19810],[118,63,7,1,1,1,29073,35110],[5,41,5,1,1,1,14428,16170],[5,73,5,1,1,1,9348,11430],[5,95,5,1,1,1,12112,14466],[5,43,5,1,1,1,6255,7099],[5,75,5,1,1,1,6892,9052],[73,103,5,0,1,1,25948,32018],[73,103,1,1,1,1,38190,42677],[73,103,3,1,1,1,33470,34849],[73,103,0,1,1,1,83162,88921],[73,103,7,1,1,1,39293,46146],[73,104,10,1,1,1,25330,25330],[73,99,5,0,1,1,23089,30245],[73,99,1,1,1,1,44589,47667],[73,99,3,1,1,1,31435,34305],[73,99,0,1,1,1,59281,73686],[73,99,7,1,1,1,43198,49017],[73,50,5,0,1,1,10635,15811],[73,50,1,1,1,1,23382,29850],[73,50,3,1,1,1,18004,18625],[73,50,0,1,1,1,26157,27980],[73,50,7,1,1,1,27386,29035],[105,54,10,1,1,1,41236,44602],[105,45,10,1,1,1,37102,47260],[105,51,10,1,1,1,47349,52184],[1,21,5,0,1,1,85064,96895],[1,22,10,1,1,1,29473,39698],[11,22,10,1,1,1,36974,47122],[45,22,10,1,1,1,35156,44454],[57,21,5,0,1,1,28457,29629],[57,21,1,1,1,1,86798,86798],[57,21,3,1,1,1,49919,49919],[57,21,7,1,1,1,43203,43203],[95,22,10,1,1,1,29235,33788],[0,73,1,1,1,1,26311,33573],[0,73,3,1,1,1,23393,26736],[0,73,0,1,1,1,42700,52365],[0,73,5,1,1,1,17907,22978],[0,73,7,1,1,1,29306,33883],[0,74,10,1,1,1,17653,17844],[0,43,1,1,1,1,18804,21872],[0,43,3,1,1,1,14158,15870],[0,43,0,1,1,1,22960,28319],[0,43,5,1,1,1,9613,12699],[0,43,7,1,1,1,22168,24143],[0,43,9,1,1,1,72787,72787],[0,75,1,1,1,1,25270,27491],[0,75,3,1,1,1,19619,21962],[0,75,0,1,1,1,30288,42091],[0,75,5,1,1,1,14434,19179],[0,75,7,1,1,1,26466,31985],[0,76,10,1,1,1,14962,16623],[0,2,1,1,1,1,19205,25826],[0,2,3,1,1,1,15816,19568],[0,2,0,1,1,1,33006,33458],[0,2,5,1,1,1,11540,14172],[0,2,7,1,1,1,23180,27103],[0,2,9,1,1,1,92616,93426],[0,3,10,1,1,1,9037,9037],[8,21,5,0,0,1,1467525,1467525],[8,21,5,0,1,1,73929,100123],[8,22,10,1,1,1,27790,29613],[37,21,5,0,1,1,99650,100169],[37,22,10,1,1,1,43304,43304],[41,21,5,0,1,1,27029,27029],[67,22,10,1,1,1,33536,40901],[90,21,5,0,0,1,711550,711550],[81,21,5,0,1,1,72729,96457],[62,21,5,0,1,1,88304,100456],[31,22,10,1,1,1,42677,53132],[44,22,10,1,1,1,45091,56285],[96,22,10,1,1,1,37334,45167],[107,54,10,1,1,1,35715,38437],[107,45,10,1,1,1,39243,45349],[108,54,10,1,1,1,32260,35836],[30,42,10,1,1,1,60606,61659],[30,74,10,1,1,1,54562,54562],[30,96,10,1,1,1,55878,59998],[30,54,10,1,1,1,48727,54343],[30,18,10,1,1,1,50148,53179],[29,41,1,1,1,1,26477,32845],[29,41,3,1,1,1,24823,26425],[29,41,0,1,1,1,44878,60312],[29,41,5,1,1,1,16277,23841],[29,41,7,1,1,1,26959,34232],[29,41,9,1,1,1,89607,98716],[29,42,10,1,1,1,22033,22033],[29,73,1,1,1,1,20679,26023],[78,48,5,0,0,1,462635,462635],[78,44,5,0,0,1,435539,556095],[78,44,5,0,1,1,84462,98282],[78,45,10,1,1,1,19786,22846],[78,51,10,1,1,1,23545,23545],[78,4,5,0,0,1,465351,475927],[78,4,5,0,1,1,52120,95047],[78,32,5,0,0,1,791063,795451],[78,33,10,1,1,1,24004,25283],[79,43,5,0,1,1,76762,94654],[84,73,5,0,0,1,903763,903763],[84,73,5,0,1,1,88231,97749],[84,85,5,0,0,1,427677,750205],[84,85,5,0,1,1,49364,96811],[84,86,10,1,1,1,17173,17387],[84,95,5,0,0,1,1022752,1022752],[84,43,5,0,0,1,213481,279248],[84,43,5,0,1,1,26177,36534],[84,54,10,1,1,1,11566,11793],[84,75,5,0,0,1,477211,791818],[84,75,5,0,1,1,44370,94015],[84,76,10,1,1,1,21189,22103],[84,55,5,0,0,1,483736,857261],[84,55,5,0,1,1,48080,89463],[84,56,10,1,1,1,19238,19238],[84,67,5,0,0,1,756754,756754],[84,67,5,0,1,1,76343,96405],[68,95,3,1,1,1,2256,2718],[84,44,5,0,0,1,327266,372785],[84,44,5,0,1,1,23407,56395],[84,45,10,1,1,1,15906,15906],[84,50,5,0,0,1,474406,585519],[84,50,5,0,1,1,52608,98355],[84,51,10,1,1,1,17443,18232],[84,57,5,0,0,1,557116,1309004],[84,57,5,0,1,1,74419,98029],[84,58,10,1,1,1,19818,19818],[85,85,5,0,0,1,262781,293174],[85,85,5,0,1,1,40745,66633],[85,86,10,1,1,1,12716,13467],[85,43,5,0,0,1,180450,199933],[85,43,5,0,1,1,19523,35387],[85,54,10,1,1,1,9711,9711],[85,75,5,0,0,1,364563,428217],[85,75,5,0,1,1,53635,98845],[85,76,10,1,1,1,16761,16761],[85,24,10,1,1,1,39427,44301],[85,36,5,0,0,1,293768,470927],[85,36,5,0,1,1,56475,97916],[85,11,5,0,0,1,1156611,1302307],[85,48,5,0,0,1,332979,332979],[85,48,5,0,1,1,59091,93900],[85,49,10,1,1,1,17240,17240],[85,44,5,0,0,1,296853,402245],[85,44,5,0,1,1,45228,98217],[85,45,10,1,1,1,14399,14892],[85,50,5,0,0,1,313504,423858],[85,50,5,0,1,1,51721,97268],[85,51,10,1,1,1,14909,14909],[85,57,5,0,0,1,455101,624507],[85,57,5,0,1,1,71395,93775],[85,58,10,1,1,1,15688,16555],[85,4,5,0,0,1,475632,475632],[85,4,5,0,1,1,54976,87773],[85,5,10,1,1,1,16684,16684],[85,37,10,1,1,1,14788,14788],[29,73,3,1,1,1,16974,21526],[29,73,0,1,1,1,31312,41973],[29,73,5,1,1,1,7718,16230],[29,73,7,1,1,1,23383,27018],[29,73,9,1,1,1,98118,98118],[29,95,1,1,1,1,27310,32068],[29,95,3,1,1,1,21717,22664],[29,95,0,1,1,1,34559,58347],[85,66,10,1,1,1,18985,20625],[85,32,5,0,0,1,431589,607264],[85,33,10,1,1,1,15950,15950],[80,21,5,0,1,1,77102,100185],[86,54,10,1,1,1,36982,43384],[86,46,5,0,0,1,1224291,1224291],[86,47,10,1,1,1,38814,38814],[82,21,5,0,0,1,547153,613803],[82,21,5,0,1,1,34235,50352],[82,22,10,1,1,1,9991,10218],[92,74,10,1,1,1,35547,36120],[92,85,5,0,0,1,454887,701330],[92,85,5,0,1,1,64824,92651],[92,86,10,1,1,1,20531,25107],[92,43,5,0,0,1,312145,466107],[92,43,5,0,1,1,29250,49397],[92,43,3,1,1,1,70838,88544],[29,95,5,1,1,1,16419,21033],[4,21,5,0,1,1,95058,99447],[29,95,7,1,1,1,25856,32659],[29,96,10,1,1,1,15078,17975],[29,43,1,1,1,1,14566,18265],[29,43,3,1,1,1,11116,12671],[29,43,0,1,1,1,19642,22971],[29,43,5,1,1,1,8328,9651],[29,43,6,1,1,1,83074,83074],[29,43,7,1,1,1,18365,21579],[29,43,9,1,1,1,65125,81014],[29,54,10,1,1,1,6428,6428],[29,75,1,1,1,1,22425,24021],[29,75,3,1,1,1,14713,16823],[29,75,0,1,1,1,16752,29740],[29,75,5,1,1,1,10331,13532],[29,75,7,1,1,1,21840,25090],[92,43,7,1,1,1,79224,84803],[92,54,10,1,1,1,16283,17609],[92,76,10,1,1,1,26486,33801],[92,44,5,0,0,1,328621,339067],[92,44,5,0,1,1,37286,57594],[92,44,7,1,1,1,97805,97805],[92,45,10,1,1,1,21929,21929],[93,54,10,1,1,1,34785,38181],[93,45,10,1,1,1,44344,44344],[97,54,10,1,1,1,40696,43814],[97,45,10,1,1,1,46891,48082],[98,54,10,1,1,1,39434,39434],[98,45,10,1,1,1,44618,44618],[100,43,5,0,0,1,752559,1134707],[100,54,10,1,1,1,32504,40353],[100,76,10,1,1,1,40849,44529],[29,75,9,1,1,1,93754,93754],[29,76,10,1,1,1,13221,13736],[51,85,1,1,1,1,14003,16082],[51,85,3,1,1,1,8902,10525],[51,85,0,1,1,1,14698,15741],[51,85,5,1,1,1,6624,8009],[51,85,7,1,1,1,18144,19439],[51,85,9,1,1,1,73582,89352],[51,86,10,1,1,1,6193,6967],[51,43,1,1,1,1,10321,13141],[51,43,3,1,1,1,6667,7417],[51,43,0,1,1,1,8821,13652],[51,43,5,1,1,1,2528,6166],[51,43,6,1,1,1,83264,83264],[51,43,7,1,1,1,15577,16434],[51,43,9,1,1,1,58393,58393],[51,54,10,1,1,1,5242,5242],[100,44,5,0,1,1,26671,26671],[100,45,10,1,1,1,45980,46344],[102,85,5,0,0,1,1032193,1120636],[102,85,5,0,1,1,85086,95226],[102,86,10,1,1,1,20157,23411],[102,43,5,0,0,1,267512,418646],[102,43,5,0,1,1,56202,85014],[102,54,10,1,1,1,18321,19012],[102,75,5,0,0,1,734121,788427],[102,76,10,1,1,1,24586,26356],[102,17,5,0,0,1,422859,454098],[102,17,5,0,1,1,15983,98132],[68,111,5,0,1,1,845,914],[103,54,10,1,1,1,38447,46228],[103,76,10,1,1,1,44825,44825],[103,45,10,1,1,1,41517,46842],[51,93,1,1,1,1,34397,37886],[51,93,3,1,1,1,21945,22447],[51,93,0,1,1,1,34677,34677],[51,93,5,1,1,1,13728,19667],[51,93,7,1,1,1,30041,33832],[51,93,9,1,1,1,79116,79116],[51,94,10,1,1,1,14986,14986],[52,73,1,1,1,1,21063,25738],[52,73,3,1,1,1,14370,16177],[52,73,0,1,1,1,20515,23273],[52,73,5,1,1,1,10983,13762],[52,73,7,1,1,1,26377,28765],[52,73,9,1,1,1,96950,96950],[52,74,10,1,1,1,13104,13104],[52,95,1,1,1,1,23852,26869],[52,95,3,1,1,1,18773,21095],[52,95,0,1,1,1,28448,32631],[104,43,5,0,0,1,897608,907007],[104,54,10,1,1,1,33785,37893],[104,76,10,1,1,1,37164,41746],[104,15,5,0,0,1,1106541,1106541],[104,16,10,1,1,1,38300,38300],[112,86,10,1,1,1,25537,26883],[112,43,5,0,0,1,501179,757148],[112,54,10,1,1,1,20798,24277],[112,76,10,1,1,1,27025,27025],[112,44,5,0,0,1,744528,1355713],[112,45,10,1,1,1,22897,22897],[112,51,10,1,1,1,26929,26929],[112,58,10,1,1,1,29108,35003],[112,37,10,1,1,1,35048,35247],[112,66,10,1,1,1,36782,36782],[112,33,10,1,1,1,27747,30871],[52,95,5,1,1,1,13596,17413],[52,95,7,1,1,1,29055,31000],[52,96,10,1,1,1,17433,20078],[52,43,1,1,1,1,16456,18051],[52,43,3,1,1,1,10926,12860],[52,43,0,1,1,1,19308,20326],[52,43,5,1,1,1,8613,10923],[52,43,7,1,1,1,19003,21785],[52,43,9,1,1,1,83608,83608],[52,54,10,1,1,1,8428,8836],[52,120,1,1,1,1,29037,35915],[52,120,3,1,1,1,26375,27003],[52,120,0,1,1,1,45153,53165],[52,120,5,1,1,1,20349,26030],[52,120,7,1,1,1,33618,38540],[52,121,10,1,1,1,21279,24615],[53,85,1,1,1,1,13269,14109],[53,85,3,1,1,1,7177,7792],[53,85,0,1,1,1,8883,14509],[53,85,5,1,1,1,5596,6914],[53,85,7,1,1,1,16617,18755],[53,85,9,1,1,1,69631,72719],[53,86,10,1,1,1,5143,5252],[53,43,1,1,1,1,7639,7687],[53,43,3,1,1,1,6217,6271],[53,43,0,1,1,1,7320,8653],[53,43,5,1,1,1,2397,4539],[53,43,7,1,1,1,14039,14271],[53,43,9,1,1,1,61679,61679],[53,27,1,1,1,1,17040,23802],[53,27,3,1,1,1,15246,16539],[53,27,0,1,1,1,22648,28609],[53,27,5,1,1,1,10826,13949],[53,27,7,1,1,1,23049,28154],[53,27,9,1,1,1,98310,98310],[53,28,10,1,1,1,12831,12831],[54,85,1,1,1,1,15352,19142],[54,85,3,1,1,1,12021,14264],[54,85,0,1,1,1,18191,19790],[54,85,5,1,1,1,8514,9723],[54,85,7,1,1,1,20875,23007],[54,85,9,1,1,1,91152,96894],[54,86,10,1,1,1,8776,8911],[54,43,1,1,1,1,13428,15251],[54,43,3,1,1,1,8933,10606],[54,43,0,1,1,1,11731,17375],[54,43,5,1,1,1,6860,8051],[54,43,6,1,1,1,86536,86536],[54,43,7,1,1,1,17392,20933],[54,43,9,1,1,1,75101,75101],[54,54,10,1,1,1,6755,7478],[54,120,1,1,1,1,24580,38325],[54,120,3,1,1,1,20243,24865],[54,120,0,1,1,1,38251,42818],[54,120,5,1,1,1,15463,19535],[54,120,7,1,1,1,30229,31796],[12,21,7,1,1,1,88763,100355],[54,121,10,1,1,1,13890,13890],[54,9,1,1,1,1,32117,41498],[54,9,3,1,1,1,27770,31135],[54,9,0,1,1,1,52756,91459],[54,9,5,1,1,1,22224,27060],[54,9,7,1,1,1,36187,41191],[65,21,1,1,1,1,7727,7842],[65,21,3,1,1,1,5331,8703],[65,21,0,1,1,1,10668,10668],[65,21,5,1,1,1,4405,5081],[65,21,6,1,1,1,47584,65383],[65,21,7,1,1,1,11937,13559],[65,21,9,1,1,1,41724,41724],[69,41,1,1,1,1,12045,15532],[69,41,3,1,1,1,8094,8968],[69,41,0,1,1,1,14678,16620],[69,41,5,1,1,1,6253,7902],[69,41,7,1,1,1,15928,17674],[69,41,9,1,1,1,61573,67684],[69,42,10,1,1,1,7010,7010],[68,43,5,1,1,2,1,247],[68,85,5,1,1,2,1,522],[68,77,5,1,1,2,1,589],[68,87,5,1,1,2,1,701],[68,73,5,1,1,2,1,914],[68,95,5,1,1,2,1,1341],[68,38,5,1,1,2,1,1672],[68,109,5,1,1,2,1,1788],[68,111,5,1,1,2,1,2035],[68,101,5,1,1,2,1,2159],[68,41,5,1,1,2,1,2707],[68,61,5,1,1,2,1,3173],[68,83,5,1,1,2,1,3585],[68,107,5,1,1,2,1,4540]]};
+const { INST, PROG, CAT, QUOTA, SEAT, ROUND, ROWS } = DATA;
+
+const CAT_ORDER = ['Open','EWS','OBC - A','OBC - A (PwD)','OBC - B','OBC - B (PwD)','SC','SC (PwD)','ST','Open (PwD)','Tuition Fee Waiver'];
+const CAT_LABELS = {
+  'Open':'Open (General)', 'Open (PwD)':'Open (PwD)',
+  'OBC - A':'OBC-A', 'OBC - A (PwD)':'OBC-A (PwD)',
+  'OBC - B':'OBC-B', 'OBC - B (PwD)':'OBC-B (PwD)',
+  'SC':'SC', 'SC (PwD)':'SC (PwD)', 'ST':'ST', 'EWS':'EWS',
+  'Tuition Fee Waiver':'Tuition Fee Waiver (TFW)'
+};
+const SEAT_LABELS = { 'WBJEE Seats':'WBJEE Seats', 'JEE(Main) Seats':'JEE (Main) Seats' };
+const ROUND_LABELS = { 'Round 1':'Round 1', 'Round 2':'Round 2 (Final / Latest)', 'Decentralized Round':'Decentralized Round (JU)' };
+
+const rankInput = document.getElementById('rankInput');
+const categorySelect = document.getElementById('categorySelect');
+const quotaSelect = document.getElementById('quotaSelect');
+const seatSelect = document.getElementById('seatSelect');
+const roundSelect = document.getElementById('roundSelect');
+const predictBtn = document.getElementById('predictBtn');
+const resultsInner = document.getElementById('resultsInner');
+
+function fillSelect(select, values, labelMap, selectedValue){
+  select.innerHTML = '';
+  values.forEach(v=>{
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = (labelMap && labelMap[v]) ? labelMap[v] : v;
+    if(v === selectedValue) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+function validSeatTypesForQuota(quotaVal){
+  const qIdx = QUOTA.indexOf(quotaVal);
+  const set = new Set();
+  ROWS.forEach(r=>{ if(r[3]===qIdx) set.add(SEAT[r[4]]); });
+  return SEAT.filter(s=>set.has(s));
+}
+
+function initSelects(){
+  const orderedCats = CAT_ORDER.filter(c=>CAT.includes(c));
+  CAT.forEach(c=>{ if(!orderedCats.includes(c)) orderedCats.push(c); });
+  fillSelect(categorySelect, orderedCats, CAT_LABELS, 'Open');
+
+  const quotaOrder = ['Home State','All India'].filter(q=>QUOTA.includes(q));
+  fillSelect(quotaSelect, quotaOrder, null, 'Home State');
+
+  refreshSeatOptions();
+
+  const roundOrder = ['Decentralized Round','Round 2','Round 1'].filter(r=>ROUND.includes(r));
+  fillSelect(roundSelect, roundOrder, ROUND_LABELS, 'Round 2');
+}
+
+function refreshSeatOptions(){
+  const opts = validSeatTypesForQuota(quotaSelect.value);
+  const current = seatSelect.value;
+  fillSelect(seatSelect, opts, SEAT_LABELS, opts.includes(current) ? current : opts[0]);
+}
+
+quotaSelect && quotaSelect.addEventListener('change', refreshSeatOptions);
+
+function chanceFor(rank, opening, closing){
+  if(rank <= opening) return 'safe';
+  const span = closing - opening;
+  if(span <= 0) return 'moderate';
+  const ratio = (closing - rank) / span;
+  return ratio >= 0.5 ? 'moderate' : 'dream';
+}
+const CHANCE_LABEL = { safe:'SAFE', moderate:'MODERATE', dream:'DREAM' };
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderEmpty(rank, catLabel, quotaLabel, seatLabel, roundLabel){
+  resultsInner.innerHTML = `
+    <div class="empty-state">
+      <h3>No matches at this rank, yet</h3>
+      <p>Every closing rank on record for <strong>${escapeHtml(catLabel)}</strong> under <strong>${escapeHtml(quotaLabel)} · ${escapeHtml(seatLabel)} · ${escapeHtml(roundLabel)}</strong> falls above rank <strong>${rank.toLocaleString('en-IN')}</strong>. Try switching the quota to All India, changing the seat type, or checking Round 1 instead — cutoffs differ a lot between these combinations.</p>
+    </div>`;
+}
+
+function renderError(message){
+  resultsInner.innerHTML = `
+    <div class="error-state">
+      <h3>Enter a valid rank</h3>
+      <p>${escapeHtml(message)}</p>
+    </div>`;
+}
+
+function renderResults(matches, totalCount, rank, catLabel, quotaLabel, seatLabel, roundLabel, isDecentral){
+  const rows = matches.map((m, i)=>{
+    const chance = chanceFor(rank, m.opening, m.closing);
+    const num = String(i+1).padStart(2,'0');
+    const ranksHtml = isDecentral
+      ? `<div class="rank-block"><span class="rank-label">Cut-Off Rank</span><span class="rank-num">${m.closing.toLocaleString('en-IN')}</span></div>`
+      : `<div class="rank-block"><span class="rank-label">Opening</span><span class="rank-num">${m.opening.toLocaleString('en-IN')}</span></div>
+          <div class="rank-block"><span class="rank-label">Closing</span><span class="rank-num">${m.closing.toLocaleString('en-IN')}</span></div>`;
+    return `
+      <div class="result-row">
+        <div class="result-num">${num}</div>
+        <div class="result-main">
+          <h3 class="result-inst">${escapeHtml(m.institute)}</h3>
+          <p class="result-prog">${escapeHtml(m.program)}</p>
+          <div class="result-tags">
+            <span class="tag">${escapeHtml(catLabel)}</span>
+            <span class="tag">${escapeHtml(quotaLabel)}</span>
+            <span class="tag">${escapeHtml(seatLabel)}</span>
+            <span class="tag">${escapeHtml(roundLabel)}</span>
+          </div>
+        </div>
+        <div class="result-ranks">
+          ${ranksHtml}
+        </div>
+        <div class="result-chance"><span class="chance-pill chance-${chance}">${CHANCE_LABEL[chance]}</span></div>
+      </div>`;
+  }).join('');
+
+  const headline = totalCount > matches.length
+    ? `Top ${matches.length} of ${totalCount} matches`
+    : `${matches.length} match${matches.length===1?'':'es'} found`;
+
+  const legendHtml = isDecentral
+    ? `<div class="legend">
+      <span><span class="dot dot-safe"></span>Safe — your rank is below the cut-off</span>
+      <span><span class="dot dot-dream"></span>Dream — your rank is above the cut-off, a reach</span>
+    </div>`
+    : `<div class="legend">
+      <span><span class="dot dot-safe"></span>Safe — comfortably better than the opening rank</span>
+      <span><span class="dot dot-moderate"></span>Moderate — solidly within last cycle's range</span>
+      <span><span class="dot dot-dream"></span>Dream — right at the edge of the cutoff, a reach</span>
+    </div>`;
+
+  resultsInner.innerHTML = `
+    <div class="results-summary">
+      <h2 class="results-title">${headline}</h2>
+      <span class="results-meta">RANK ${rank.toLocaleString('en-IN')} · ${escapeHtml(catLabel).toUpperCase()}</span>
+    </div>
+    ${legendHtml}
+    ${rows}`;
+}
+
+function predict(){
+  const rankRaw = rankInput.value.trim();
+  const rank = parseInt(rankRaw, 10);
+  if(!rankRaw || isNaN(rank) || rank <= 0){
+    renderError('Please enter your WBJEE rank as a positive number, then press Predict My Colleges.');
+    return;
+  }
+
+  const catVal = categorySelect.value;
+  const quotaVal = quotaSelect.value;
+  const seatVal = seatSelect.value;
+  const roundVal = roundSelect.value;
+
+  const catIdx = CAT.indexOf(catVal);
+  const quotaIdx = QUOTA.indexOf(quotaVal);
+  const seatIdx = SEAT.indexOf(seatVal);
+  const roundIdx = ROUND.indexOf(roundVal);
+
+  const filtered = ROWS.filter(r=>
+    r[2]===catIdx && r[3]===quotaIdx && r[4]===seatIdx && r[5]===roundIdx && r[7] >= rank
+  );
+
+  filtered.sort((a,b)=> a[7]-b[7]);
+
+  const catLabel = CAT_LABELS[catVal] || catVal;
+  const seatLabel = SEAT_LABELS[seatVal] || seatVal;
+  const roundLabel = ROUND_LABELS[roundVal] || roundVal;
+
+  if(filtered.length === 0){
+    renderEmpty(rank, catLabel, quotaVal, seatLabel, roundLabel);
+    return;
+  }
+
+  const top = filtered.slice(0,15).map(r=>({
+    institute: INST[r[0]],
+    program: PROG[r[1]],
+    opening: r[6],
+    closing: r[7]
+  }));
+
+  const isDecentral = roundVal === 'Decentralized Round';
+  renderResults(top, filtered.length, rank, catLabel, quotaVal, seatLabel, roundLabel, isDecentral);
+}
+
+predictBtn.addEventListener('click', predict);
+rankInput.addEventListener('keydown', e=>{ if(e.key === 'Enter') predict(); });
+
+initSelects();
+</script>
+
+<div class="motivation-quote">“Whenever you see struggle, remember us.”</div>
+<style>
+.motivation-quote{
+position:fixed;
+left:18px;
+bottom:12px;
+z-index:9999;
+background:none;
+border:none;
+box-shadow:none;
+padding:0;
+color:#6b7280;
+font-family:'IBM Plex Sans',sans-serif;
+font-size:13px;
+font-style:italic;
+}
+.ticket-panel{
+ border-radius:16px !important;
+}
+#predictBtn{
+ border-radius:10px !important;
+}
+.result-row:hover{
+ background:rgba(189,154,61,.06);
+ transition:.2s ease;
+}
+</style>
+
+</body>
+</html>
